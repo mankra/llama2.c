@@ -1,6 +1,7 @@
 # choose your compiler, e.g. gcc/clang
 # example override to clang: make run CC=clang
 CC = gcc
+NVCC = nvcc
 
 # the most basic way of building that is most likely to work on most systems
 .PHONY: run
@@ -27,6 +28,15 @@ rundebug: run.c
 runfast: run.c
 	$(CC) -Ofast -o run run.c -lm
 	$(CC) -Ofast -o runq runq.c -lm
+
+# Same as run, but with CUDA support
+.PHONY: runcuda
+runcuda: run.c matmul.o
+	$(CC) -D ENABLE_CUDA=1 -c -O3 -o run.o run.c
+	$(NVCC) -o run run.o matmul.o
+matmul.o: matmul.cu
+	$(NVCC) -c -O3 -o matmul.o matmul.cu
+
 
 # additionally compiles with OpenMP, allowing multithreaded runs
 # make sure to also enable multiple threads when running, e.g.:
@@ -57,6 +67,11 @@ runompgnu:
 test:
 	pytest
 
+# build a test to check if cuda is calculating correctly.
+testcuda: testcuda.c matmul.o
+	$(CC) -c -O3 -o testcuda.o testcuda.c
+	$(NVCC) -o testcuda testcuda.o matmul.o
+
 # run only tests for run.c C implementation (is a bit faster if only C code changed)
 .PHONY: testc
 testc:
@@ -74,3 +89,4 @@ testcc:
 clean:
 	rm -f run
 	rm -f runq
+	rm -f *.o

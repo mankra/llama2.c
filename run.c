@@ -13,6 +13,7 @@
     #include <unistd.h>
     #include <sys/mman.h>
 #endif
+
 // ----------------------------------------------------------------------------
 // Transformer model
 
@@ -214,6 +215,7 @@ void softmax(float* x, int size) {
     }
 }
 
+#if ENABLE_CUDA != 1
 void matmul(float* xout, float* x, float* w, int n, int d) {
     // W (d,n) @ x (n,) -> xout (d,)
     // by far the most amount of time is spent inside this little function
@@ -227,6 +229,9 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
         xout[i] = val;
     }
 }
+#else
+extern void matmul(float* xout, float* x, float* w, int n, int d);
+#endif
 
 float* forward(Transformer* transformer, int token, int pos) {
 
@@ -904,7 +909,6 @@ void error_usage() {
 }
 
 int main(int argc, char *argv[]) {
-
     // default parameters
     char *checkpoint_path = NULL;  // e.g. out/model.bin
     char *tokenizer_path = "tokenizer.bin";
@@ -940,6 +944,7 @@ int main(int argc, char *argv[]) {
     if (temperature < 0.0) temperature = 0.0;
     if (topp < 0.0 || 1.0 < topp) topp = 0.9;
     if (steps < 0) steps = 0;
+
 
     // build the Transformer via the model .bin file
     Transformer transformer;
