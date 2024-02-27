@@ -53,7 +53,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     cudaMalloc((void **) &d_x, size_x);
     cudaMalloc((void **) &d_out, size_out);
 
-    printf("size_w: %zd size_x: %zd", size_w, size_x);
+    printf("size_w: %zd size_x: %zd\n", size_w, size_x);
     cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice);
     cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice);
 
