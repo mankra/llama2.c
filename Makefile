@@ -32,7 +32,7 @@ runfast: run.c
 # Same as run, but with CUDA support
 .PHONY: runcuda
 runcuda: run.c matmul.o
-	$(NVCC) -D ENABLE_CUDA=1 -c -O3 -o run.o run.c
+	$(CC) -D ENABLE_CUDA=1 -c -O3 -o run.o run.c
 	$(NVCC) -o run run.o matmul.o
 matmul.o: matmul.cu
 	$(NVCC) -c -O3 -o matmul.o matmul.cu

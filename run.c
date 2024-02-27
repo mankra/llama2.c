@@ -14,10 +14,6 @@
     #include <sys/mman.h>
 #endif
 
-#if ENABLE_CUDA == 1
-    #include <cuda_runtime.h>
-#endif
-
 // ----------------------------------------------------------------------------
 // Transformer model
 
@@ -82,16 +78,10 @@ typedef struct {
 void malloc_run_state(RunState* s, Config* p) {
     // we calloc instead of malloc to keep valgrind happy
     int kv_dim = (p->dim * p->n_kv_heads) / p->n_heads;
-#if ENABLE_CUDA != 1
     s->x = calloc(p->dim, sizeof(float));
 	s->xb = calloc(p->dim, sizeof(float));
-    s->hb = calloc(p->hidden_dim, sizeof(float));
-#else
-    cudaMallocHost((void**)&s->x, p->dim * sizeof(float));
-    cudaMallocHost((void**)&s->xb, p->dim * sizeof(float));
-    cudaMallocHost((void**)&s->hb, p->hidden_dim * sizeof(float));
-#endif
     s->xb2 = calloc(p->dim, sizeof(float));
+    s->hb = calloc(p->hidden_dim, sizeof(float));
     s->hb2 = calloc(p->hidden_dim, sizeof(float));
     s->q = calloc(p->dim, sizeof(float));
     s->key_cache = calloc(p->n_layers * p->seq_len * kv_dim, sizeof(float));
