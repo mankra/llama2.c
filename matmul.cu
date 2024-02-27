@@ -53,6 +53,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     cudaMalloc((void **) &d_x, size_x);
     cudaMalloc((void **) &d_out, size_out);
 
+    printf("size_w: %zd size_x: %zd", size_w, size_x);
     cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice);
     cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice);
 
@@ -64,11 +65,11 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     }
 
     matrixMultiplicationKernel<<<blocksPerGrid, threadsPerBlock>>>(d_w, d_x, d_out, n, d);
-    //cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
 
     cudaMemcpy(h_out, d_out, size_out, cudaMemcpyDeviceToHost);
-    //cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
     // Deallocate device memory
     cudaFree(d_x);
