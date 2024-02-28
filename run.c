@@ -16,6 +16,8 @@
 
 #if defined ENABLE_CUDA
     #include "matmul.h"
+#else
+    #define DBG_PRINTF(PRINTF_MSG) do { ; } while(0)
 #endif
 
 // ----------------------------------------------------------------------------
