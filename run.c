@@ -763,7 +763,6 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
         exit(EXIT_FAILURE);
     }
 
-    DBG_PRINTF(("here\n"));
     // start the main loop
     long start = 0;  // used to time our code, only initialized after first iteration
     int next;        // will store the next token in the sequence
@@ -771,6 +770,7 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
     int pos = 0;     // position in the sequence
     while (pos < steps) {
 
+    DBG_PRINTF(("here\n"));
         // forward the transformer to get logits for the next token
         float* logits = forward(transformer, token, pos);
 
