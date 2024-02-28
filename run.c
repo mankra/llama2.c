@@ -259,7 +259,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 
     // copy the token embedding into x
     float* content_row = w->token_embedding_table + token * dim;
-#if defined (ENABLE_CUDA)
+#if ! defined (ENABLE_CUDA)
     memcpy(x, content_row, dim*sizeof(*x));
 #else
     copyDeviceWeightsToHost(x, content_row, dim * sizeof(*x));
