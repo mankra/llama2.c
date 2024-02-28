@@ -107,10 +107,12 @@ void malloc_run_state(RunState* s, Config* p) {
 }
 
 void free_run_state(RunState* s) {
+#if ! defined ENABLE_CUDA
     free(s->x);
     free(s->xb);
-    free(s->xb2);
     free(s->hb);
+#endif
+    free(s->xb2);
     free(s->hb2);
     free(s->q);
     free(s->att);
