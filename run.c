@@ -172,8 +172,8 @@ void read_checkpoint(char* checkpoint, Config* config, TransformerWeights* weigh
 #if defined (ENABLE_CUDA)
     weights_ptr = allocateDeviceWeights(weights_ptr, *file_size - sizeof(Config)/sizeof(float));
 #endif
-    DBG_PRINTF(("here\n"));
     memory_map_weights(weights, config, weights_ptr, shared_weights);
+    DBG_PRINTF(("here\n"));
 }
 
 void build_transformer(Transformer *t, char* checkpoint_path) {
