@@ -6,32 +6,22 @@
 static float *weights { nullptr };
 static std::vector<float *> deviceMemory;
 
-#define handleCudaResult(FUNC) \
+#define HANDLE_CUDA_RESULT(FUNC) \
     if (cudaError_t result = FUNC; result != cudaSuccess) \
     { \
         fprintf(stderr, "Encountered cuda error with function '%s' at line %d: %s(%d)\n", #FUNC, __LINE__, cudaGetErrorName(result), result); \
         exit(1); \
-    } \
-    /*
-static void handleCudaResult(cudaError_t result)
-{
-    if (result != cudaSuccess)
-    {
-        fprintf(stderr, "Encountered cuda error: %s(%d)\n", cudaGetErrorName(result), result);
-        exit(1);
     }
-}
-     */
 
 float *allocateDeviceWeights(void *data, size_t size)
 {
     if (weights)
     {
-        handleCudaResult(cudaFree(weights));
+        HANDLE_CUDA_RESULT(cudaFree(weights));
     }
 
-    handleCudaResult(cudaMalloc((void**)&weights, size));
-    handleCudaResult(cudaMemcpy(weights, data, size, cudaMemcpyHostToDevice));
+    HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
+    HANDLE_CUDA_RESULT(cudaMemcpy(weights, data, size, cudaMemcpyHostToDevice));
 
     return weights;
 }
@@ -39,8 +29,8 @@ float *allocateDeviceWeights(void *data, size_t size)
 float *allocateDeviceMemory(float *source, size_t size)
 {
     float *ptr{nullptr};
-    handleCudaResult(cudaMalloc((void**)&ptr, size));
-    handleCudaResult(cudaMemcpy((void**)&ptr, source, size, cudaMemcpyHostToDevice));
+    HANDLE_CUDA_RESULT(cudaMalloc((void**)&ptr, size));
+    HANDLE_CUDA_RESULT(cudaMemcpy((void**)&ptr, source, size, cudaMemcpyHostToDevice));
     deviceMemory.push_back(ptr);
     return ptr;
 }
@@ -48,7 +38,7 @@ float *allocateDeviceMemory(float *source, size_t size)
 float *allocatePinnedHostMemory(size_t size)
 {
     float *ptr{nullptr};
-    handleCudaResult(cudaMallocHost((void**)&ptr, size));
+    HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
     deviceMemory.push_back(ptr);
     return ptr;
 }
@@ -57,13 +47,13 @@ void freeDeviceMemoryAndWeights()
 {
     if (weights)
     {
-        handleCudaResult(cudaFree(weights));
+        HANDLE_CUDA_RESULT(cudaFree(weights));
         weights = nullptr;
     }
 
     for (auto ptr : deviceMemory)
     {
-        handleCudaResult(cudaFree(ptr));
+        HANDLE_CUDA_RESULT(cudaFree(ptr));
     }
     deviceMemory.clear();
 }
@@ -91,7 +81,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
 
     if (isCudaChecked == false) {
         int deviceCnt;
-        handleCudaResult(cudaGetDeviceCount(&deviceCnt));
+        HANDLE_CUDA_RESULT(cudaGetDeviceCount(&deviceCnt));
 
         if (deviceCnt < 1) {
             fprintf(stderr, "No CUDA devices found.\n");
@@ -110,12 +100,12 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     float *d_out{};
 
     // Allocate device memory
-    handleCudaResult(cudaMalloc((void **) &d_w, size_w));
-    handleCudaResult(cudaMalloc((void **) &d_x, size_x));
-    handleCudaResult(cudaMalloc((void **) &d_out, size_out));
+    HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
+    HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
+    HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_out, size_out));
 
-    handleCudaResult(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
-    handleCudaResult(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
+    HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
+    HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
 
     dim3 threadsPerBlock{static_cast<unsigned>(d)};
     dim3 blocksPerGrid{1};
@@ -125,11 +115,11 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     }
 
     matrixMultiplicationKernel<<<blocksPerGrid, threadsPerBlock>>>(d_w, d_x, d_out, n, d);
-    handleCudaResult(cudaDeviceSynchronize());
+    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
 
-    handleCudaResult(cudaMemcpy(h_out, d_out, size_out, cudaMemcpyDeviceToHost));
-    handleCudaResult(cudaDeviceSynchronize());
+    HANDLE_CUDA_RESULT(cudaMemcpy(h_out, d_out, size_out, cudaMemcpyDeviceToHost));
+    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
     // Deallocate device memory
     cudaFree(d_x);
