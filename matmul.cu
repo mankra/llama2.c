@@ -7,11 +7,13 @@ static float *weights { nullptr };
 static std::vector<float *> deviceMemory;
 
 #define HANDLE_CUDA_RESULT(FUNC) \
-    if (cudaError_t result = FUNC; result != cudaSuccess) \
-    { \
-        fprintf(stderr, "Encountered cuda error with function '%s' at line %d: %s(%d)\n", #FUNC, __LINE__, cudaGetErrorName(result), result); \
-        exit(1); \
-    }
+    do { \
+        if (cudaError_t result = FUNC; result != cudaSuccess) \
+        { \
+            fprintf(stderr, "Encountered cuda error with function '%s' at line %d: %s(%d)\n", #FUNC, __LINE__, cudaGetErrorName(result), result); \
+            exit(1); \
+        } \
+    } while(0)
 
 static bool isInDeviceMemory(float *ptr)
 {
@@ -118,13 +120,14 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_out, size_out));
 
     if (isInDeviceMemory(h_w) == false)
-    {
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
-    }
+    else
+        d_w = h_w;
+
     if (isInDeviceMemory(h_x) == false)
-    {
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
-    }
+    else
+        d_x = h_x;
 
     dim3 threadsPerBlock{static_cast<unsigned>(d)};
     dim3 blocksPerGrid{1};
@@ -141,7 +144,13 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
     // Deallocate device memory
-    cudaFree(d_x);
-    cudaFree(d_w);
-    cudaFree(d_out);
+    if (d_x != h_x)
+    {
+        HANDLE_CUDA_RESULT(cudaFree(d_x));
+    }
+    if (d_w != h_w)
+    {
+        HANDLE_CUDA_RESULT(cudaFree(d_w));
+    }
+    HANDLE_CUDA_RESULT(cudaFree(d_out));
 }
