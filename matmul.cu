@@ -6,14 +6,22 @@
 static float *weights { nullptr };
 static std::vector<float *> deviceMemory;
 
+#define handleCudaResult(FUNC) \
+    if (cudaError_t result = FUNC; result != cudaSuccess) \
+    { \
+        fprintf(stderr, "Encountered cuda error with function '%s' at line %d: %s(%d)\n", #FUNC, __LINE__, cudaGetErrorName(result), result); \
+        exit(1); \
+    } \
+    /*
 static void handleCudaResult(cudaError_t result)
 {
     if (result != cudaSuccess)
     {
-        fprintf(stderr, "Could not get CUDA device count: %s(%d)\n", cudaGetErrorName(result), result);
+        fprintf(stderr, "Encountered cuda error: %s(%d)\n", cudaGetErrorName(result), result);
         exit(1);
     }
 }
+     */
 
 float *allocateDeviceWeights(void *data, size_t size)
 {
