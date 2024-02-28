@@ -18,7 +18,7 @@ static size_t weights_size {0};
         if (cudaError_t result = FUNC; result != cudaSuccess) \
         { \
             fprintf(stderr, "Encountered cuda error with function '%s' at line %d: %s(%d)\n", #FUNC, __LINE__, cudaGetErrorName(result), result); \
-            exit(1); \
+            exit(EXIT_FAILURE); \
         } \
     } while(0)
 
@@ -31,7 +31,7 @@ static bool isInDeviceMemory(float *ptr, size_t size)
         {
             fprintf(stderr, "Questioned memory is too big for allocated weights: %p/%zd - %p/%zd\n",
                 weights, weights_size, ptr, size);
-               exit(1);
+               exit(EXIT_FAILURE);
         }
         return true;
     }
@@ -94,7 +94,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
 
         if (deviceCnt < 1) {
             fprintf(stderr, "No CUDA devices found.\n");
-            exit(1);
+            exit(EXIT_FAILURE
         }
 
         isCudaChecked = true;
