@@ -177,9 +177,6 @@ void read_checkpoint(char* checkpoint, Config* config, TransformerWeights* weigh
     *data = mmap(NULL, *file_size, PROT_READ, MAP_PRIVATE, *fd, 0);
     if (*data == MAP_FAILED) { fprintf(stderr, "mmap failed!\n"); exit(EXIT_FAILURE); }
     float* weights_ptr = *data + sizeof(Config)/sizeof(float);
-#if 0
-    weights_ptr = allocateDeviceWeights(weights_ptr, file_size - sizeof(Config)/sizeof(float));
-#endif
     memory_map_weights(weights, config, weights_ptr, shared_weights);
 }
 

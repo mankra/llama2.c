@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <vector>
 
-static float *weights { nullptr };
+static std::vector<float *> pinnedHostMemory;
 static std::vector<float *> deviceMemory;
 
 #define HANDLE_CUDA_RESULT(FUNC) \
@@ -17,32 +17,15 @@ static std::vector<float *> deviceMemory;
 
 static bool isInDeviceMemory(float *ptr)
 {
-    printf("size: %zd\n", deviceMemory.size());
-
     for(const auto p : deviceMemory)
     {
         if (p == ptr)
         {
-            printf("found: %p/%p\n", p, ptr);
             return true;
         }
     }
-    printf("not found: %p\n", ptr);
 
     return false;
-}
-
-float *allocateDeviceWeights(void *data, size_t size)
-{
-    if (weights)
-    {
-        HANDLE_CUDA_RESULT(cudaFree(weights));
-    }
-
-    HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
-    HANDLE_CUDA_RESULT(cudaMemcpy(weights, data, size, cudaMemcpyHostToDevice));
-
-    return weights;
 }
 
 float *allocateDeviceMemory(float *source, size_t size)
@@ -58,23 +41,21 @@ float *allocatePinnedHostMemory(size_t size)
 {
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
-    deviceMemory.push_back(ptr);
+    pinnedHostMemory.push_back(ptr);
     return ptr;
 }
 
 void freeDeviceMemoryAndWeights()
 {
-    if (weights)
+    for (auto ptr : pinnedHostMemory)
     {
-        HANDLE_CUDA_RESULT(cudaFree(weights));
-        weights = nullptr;
+        HANDLE_CUDA_RESULT(cudaFree(ptr));
     }
 
     for (auto ptr : deviceMemory)
     {
         HANDLE_CUDA_RESULT(cudaFree(ptr));
     }
-    deviceMemory.clear();
 }
 
 __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n, int d) {

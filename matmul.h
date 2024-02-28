@@ -9,7 +9,6 @@
 extern "C" {
 #endif
 
-float *allocateDeviceWeights(void *data, size_t size);
 float *allocateDeviceMemory(float *src, size_t size);
 float *allocatePinnedHostMemory(size_t size);
 void freeDeviceMemoryAndWeights();
