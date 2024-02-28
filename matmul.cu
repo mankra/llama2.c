@@ -34,6 +34,7 @@ float *allocateDeviceMemory(float *source, size_t size)
     HANDLE_CUDA_RESULT(cudaMalloc((void**)&ptr, size));
     HANDLE_CUDA_RESULT(cudaMemcpy(ptr, source, size, cudaMemcpyHostToDevice));
     deviceMemory.push_back(ptr);
+    printf("allocated: %p\n", ptr);
     return ptr;
 }
 

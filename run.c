@@ -151,6 +151,7 @@ void memory_map_weights(TransformerWeights *w, Config* p, float* ptr, int shared
 
 #if defined ENABLE_CUDA
     w->wo = allocateDeviceMemory(w->wo, n_layers * (p->n_heads * head_size) * p->dim);
+    printf("wo: %p\n", w->wo);
     w->w1 = allocateDeviceMemory(w->w1, n_layers * p->dim * p->hidden_dim);
     w->w2 = allocateDeviceMemory(w->w2, n_layers * p->hidden_dim * p->dim);
     w->w3 = allocateDeviceMemory(w->w3, n_layers * p->dim * p->hidden_dim);
