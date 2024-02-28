@@ -273,11 +273,11 @@ float* forward(Transformer* transformer, int token, int pos) {
         s->v = s->value_cache + loff + pos * kv_dim;
 
         // qkv matmuls for this position
-        LOG("1\n");
+        DBG_PRINTF(("1\n"));
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
-        LOG("2\n");
+        DBG_PRINTF(("2\n"));
         matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
-        LOG("3\n");
+        DBG_PRINTF(("3\n"));
         matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
         // RoPE relative positional encoding: complex-valued rotate q and k in each head
@@ -338,7 +338,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // final matmul to get the output of the attention
-        LOG("4\n");
+        DBG_PRINTF(("4\n"));
         matmul(s->xb2, s->xb, w->wo + l*dim*dim, dim, dim);
 
         // residual connection back into x
@@ -351,9 +351,9 @@ float* forward(Transformer* transformer, int token, int pos) {
 
         // Now for FFN in PyTorch we have: self.w2(F.silu(self.w1(x)) * self.w3(x))
         // first calculate self.w1(x) and self.w3(x)
-        LOG("5\n");
+        DBG_PRINTF(("5\n"));
         matmul(s->hb, s->xb, w->w1 + l*dim*hidden_dim, dim, hidden_dim);
-        LOG("6\n");
+        DBG_PRINTF(("6\n"));
         matmul(s->hb2, s->xb, w->w3 + l*dim*hidden_dim, dim, hidden_dim);
 
         // SwiGLU non-linearity
@@ -367,7 +367,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // final matmul to get the output of the ffn
-        LOG("7\n");
+        DBG_PRINTF(("7\n"));
         matmul(s->xb, s->hb, w->w2 + l*dim*hidden_dim, hidden_dim, dim);
 
         // residual connection
@@ -380,7 +380,7 @@ float* forward(Transformer* transformer, int token, int pos) {
     rmsnorm(x, x, w->rms_final_weight, dim);
 
     // classifier into logits
-    LOG("8\n");
+    DBG_PRINTF(("8\n"));
     matmul(s->logits, x, w->wcls, p->dim, p->vocab_size);
     return s->logits;
 }
@@ -963,7 +963,6 @@ int main(int argc, char *argv[]) {
     if (temperature < 0.0) temperature = 0.0;
     if (topp < 0.0 || 1.0 < topp) topp = 0.9;
     if (steps < 0) steps = 0;
-
 
     // build the Transformer via the model .bin file
     Transformer transformer;

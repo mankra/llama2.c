@@ -24,7 +24,7 @@ static size_t weights_size {0};
 
 static bool isInDeviceMemory(float *ptr, size_t size)
 {
-    LOG("check\n");
+    DBG_PRINTF(("check\n"));
     if (weights <= ptr && ptr < weights + weights_size)
     {
         if (weights + weights_size < ptr + size)
@@ -75,12 +75,12 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
     if (col < d)
     {
         for (int i = 0; i < n; i++) {
-            //LOG("COL: %d i: %d w: %f x: %f\n", col, i, w[col*n+i], x[i]);
+            //DBG_PRINTF(("COL: %d i: %d w: %f x: %f\n", col, i, w[col*n+i], x[i]));
             sum += w[col * n + i] * x[i];
         }
     }
 
-    //LOG("COL: %d n: %d d: %d sum: %f\n", col, n, d, sum);
+    //DBG_PRINTF(("COL: %d n: %d d: %d sum: %f\n", col, n, d, sum));
     out[col] = sum;
 }
 
@@ -94,7 +94,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
 
         if (deviceCnt < 1) {
             fprintf(stderr, "No CUDA devices found.\n");
-            exit(EXIT_FAILURE
+            exit(EXIT_FAILURE);
         }
 
         isCudaChecked = true;
@@ -110,7 +110,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
 
     if (isInDeviceMemory(h_w, size_w) == false)
     {
-        LOG("copy w: %p\n", h_w);
+        DBG_PRINTF(("copy w: %p\n", h_w));
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
     }
@@ -121,7 +121,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
 
     if (isInDeviceMemory(h_x, size_x) == false)
     {
-        LOG("copy x: %p\n", h_x);
+        DBG_PRINTF(("copy x: %p\n", h_x));
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
