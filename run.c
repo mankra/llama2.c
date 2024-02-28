@@ -754,7 +754,6 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
     char *empty_prompt = "";
     if (prompt == NULL) { prompt = empty_prompt; }
 
-    DBG_PRINTF(("here\n"));
     // encode the (string) prompt into tokens sequence
     int num_prompt_tokens = 0;
     int* prompt_tokens = (int*)malloc((strlen(prompt)+3) * sizeof(int)); // +3 for '\0', ?BOS, ?EOS
@@ -764,6 +763,7 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
         exit(EXIT_FAILURE);
     }
 
+    DBG_PRINTF(("here\n"));
     // start the main loop
     long start = 0;  // used to time our code, only initialized after first iteration
     int next;        // will store the next token in the sequence
