@@ -269,9 +269,15 @@ float* forward(Transformer* transformer, int token, int pos) {
     for(unsigned long long l = 0; l < p->n_layers; l++) {
 
         // attention rmsnorm
-        DBG_PRINTF(("here\n"));
+#if defined (ENABLE_CUDA)
+        float *rms_attn_weight = (float*)calloc(dim, sizeof(float));
+        copyDeviceWeightsToHost(rms_attn_weight, w->rms_att_weight + l*dim, dim);
+        rmsnorm(s->xb, x, rms_attn_weight, dim);
+        free(rms_attn_weight);
+        rms_attn_weight = NULL;
+#else
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
-        DBG_PRINTF(("HERE\n"));
+#endif
 
         // key and value point to the kv cache
         int loff = l * p->seq_len * kv_dim; // kv cache layer offset for convenience
@@ -353,7 +359,15 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // ffn rmsnorm
+#if defined (ENABLE_CUDA)
+        float *rms_ffn_weight = (float*)calloc(dim, sizeof(float));
+        copyDeviceWeightsToHost(rms_ffn_weight, w->rms_ffn_weight + l*dim, dim);
+        rmsnorm(s->xb, x, rms_ffn_weight, dim);
+        free(rms_ffn_weight);
+        rms_ffn_weight = NULL;
+#else
         rmsnorm(s->xb, x, w->rms_ffn_weight + l*dim, dim);
+#endif
 
         // Now for FFN in PyTorch we have: self.w2(F.silu(self.w1(x)) * self.w3(x))
         // first calculate self.w1(x) and self.w3(x)
@@ -383,7 +397,15 @@ float* forward(Transformer* transformer, int token, int pos) {
     }
 
     // final rmsnorm
+#if defined (ENABLE_CUDA)
+    float *rms_final_weight = (float*)calloc(dim, sizeof(float));
+    copyDeviceWeightsToHost(rms_final_weight, w->rms_final_weight, dim);
+    rmsnorm(s->xb, x, rms_final_weight, dim);
+    free(rms_final_weight);
+    rms_final_weight = NULL;
+#else
     rmsnorm(x, x, w->rms_final_weight, dim);
+#endif
 
     // classifier into logits
     DBG_PRINTF(("8\n"));
