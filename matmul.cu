@@ -27,7 +27,7 @@ static bool isInDeviceMemory(float *ptr)
             return true;
         }
     }
-    printf("not found: %d\n", p);
+    printf("not found: %d\n", ptr);
 
     return false;
 }
