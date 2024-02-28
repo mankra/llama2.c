@@ -21,12 +21,18 @@ static std::vector<DeviceMemory> deviceMemory;
         } \
     } while(0)
 
-static bool isInDeviceMemory(float *ptr)
+static bool isInDeviceMemory(float *ptr, size_t size)
 {
     for(const auto& dm : deviceMemory)
     {
         if (dm.ptr <= ptr && ptr < dm.ptr + dm.size)
         {
+            if (dm.ptr + dm.size < ptr + size)
+            {
+                fprintf(stderr, "Questioned memory is too big for allocated: %p/%zd - %p/%zd\n",
+                    dm.ptr, dm.size, ptr, size);
+                   exit(1);
+            }
             return true;
         }
     }
@@ -106,19 +112,18 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     float *d_w{};
     float *d_out{};
 
-    // Allocate device memory
-    HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_out, size_out));
-
-    if (isInDeviceMemory(h_w) == false)
+    if (isInDeviceMemory(h_w, size_w) == false)
     {
         printf("copy w: %p\n", h_w);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
     }
     else
+    {
         d_w = h_w;
+    }
 
-    if (isInDeviceMemory(h_x) == false)
+    if (isInDeviceMemory(h_x, size_x) == false)
     {
         printf("copy x: %p\n", h_x);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
@@ -134,14 +139,15 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
         blocksPerGrid.x = ceil(double(d) / double(threadsPerBlock.x));
     }
 
+    // Allocate device memory
+    HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_out, size_out));
+
     matrixMultiplicationKernel<<<blocksPerGrid, threadsPerBlock>>>(d_w, d_x, d_out, n, d);
-    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
-    cudaDeviceSynchronize();
+    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
 
     HANDLE_CUDA_RESULT(cudaMemcpy(h_out, d_out, size_out, cudaMemcpyDeviceToHost));
-    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
-    cudaDeviceSynchronize();
+    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
     // Deallocate device memory
     if (d_x != h_x)
