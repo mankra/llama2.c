@@ -135,11 +135,13 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     }
 
     matrixMultiplicationKernel<<<blocksPerGrid, threadsPerBlock>>>(d_w, d_x, d_out, n, d);
-    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    cudaDeviceSynchronize();
 
 
     HANDLE_CUDA_RESULT(cudaMemcpy(h_out, d_out, size_out, cudaMemcpyDeviceToHost));
-    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    cudaDeviceSynchronize();
 
     // Deallocate device memory
     if (d_x != h_x)
