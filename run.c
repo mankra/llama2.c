@@ -278,8 +278,11 @@ float* forward(Transformer* transformer, int token, int pos) {
         s->v = s->value_cache + loff + pos * kv_dim;
 
         // qkv matmuls for this position
+        printf("1\n");
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
+        printf("2\n");
         matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
+        printf("3\n");
         matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
         // RoPE relative positional encoding: complex-valued rotate q and k in each head
@@ -340,6 +343,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // final matmul to get the output of the attention
+        printf("4\n");
         matmul(s->xb2, s->xb, w->wo + l*dim*dim, dim, dim);
 
         // residual connection back into x
@@ -352,7 +356,9 @@ float* forward(Transformer* transformer, int token, int pos) {
 
         // Now for FFN in PyTorch we have: self.w2(F.silu(self.w1(x)) * self.w3(x))
         // first calculate self.w1(x) and self.w3(x)
+        printf("5\n");
         matmul(s->hb, s->xb, w->w1 + l*dim*hidden_dim, dim, hidden_dim);
+        printf("6\n");
         matmul(s->hb2, s->xb, w->w3 + l*dim*hidden_dim, dim, hidden_dim);
 
         // SwiGLU non-linearity
@@ -366,6 +372,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // final matmul to get the output of the ffn
+        printf("7\n");
         matmul(s->xb, s->hb, w->w2 + l*dim*hidden_dim, hidden_dim, dim);
 
         // residual connection
@@ -378,6 +385,7 @@ float* forward(Transformer* transformer, int token, int pos) {
     rmsnorm(x, x, w->rms_final_weight, dim);
 
     // classifier into logits
+    printf("8\n");
     matmul(s->logits, x, w->wcls, p->dim, p->vocab_size);
     return s->logits;
 }
