@@ -17,10 +17,13 @@ static std::vector<float *> deviceMemory;
 
 static bool isInDeviceMemory(float *ptr)
 {
+    printf("size: %zd\n", deviceMemory.size());
+
     for(const auto p : deviceMemory)
     {
         if (p == ptr)
         {
+            printf("found: %p/%p\n", p, ptr);
             return true;
         }
     }
