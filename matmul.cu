@@ -156,3 +156,4 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     }
     HANDLE_CUDA_RESULT(cudaFree(d_out));
 }
+#pragma clang diagnostic pop
