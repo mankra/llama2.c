@@ -30,7 +30,7 @@ float *allocateDeviceMemory(float *source, size_t size)
 {
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMalloc((void**)&ptr, size));
-    HANDLE_CUDA_RESULT(cudaMemcpy((void**)&ptr, source, size, cudaMemcpyHostToDevice));
+    HANDLE_CUDA_RESULT(cudaMemcpy(ptr, source, size, cudaMemcpyHostToDevice));
     deviceMemory.push_back(ptr);
     return ptr;
 }
