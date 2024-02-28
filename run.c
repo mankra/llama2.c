@@ -180,7 +180,6 @@ void build_transformer(Transformer *t, char* checkpoint_path) {
     read_checkpoint(checkpoint_path, &t->config, &t->weights, &t->fd, &t->data, &t->file_size);
     // allocate the RunState buffers
     malloc_run_state(&t->state, &t->config);
-    DBG_PRINTF(("here\n"));
 }
 
 void free_transformer(Transformer* t) {
@@ -973,6 +972,7 @@ int main(int argc, char *argv[]) {
     // build the Tokenizer via the tokenizer .bin file
     Tokenizer tokenizer;
     build_tokenizer(&tokenizer, tokenizer_path, transformer.config.vocab_size);
+    DBG_PRINTF(("here\n"));
 
     // build the Sampler
     Sampler sampler;
