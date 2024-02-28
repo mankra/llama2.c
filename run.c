@@ -261,6 +261,7 @@ float* forward(Transformer* transformer, int token, int pos) {
     float* content_row = w->token_embedding_table + token * dim;
     memcpy(x, content_row, dim*sizeof(*x));
 
+    DBG_PRINTF(("here\n"));
     // forward all the layers
     for(unsigned long long l = 0; l < p->n_layers; l++) {
 
