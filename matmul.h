@@ -5,8 +5,11 @@
 #ifndef LLAMA2_C_MATMUL_H
 #define LLAMA2_C_MATMUL_H
 
-//#define DBG_PRINTF(PRINTF_MSG) do { printf("DBG: " PRINTF_MSG); } while(0)
-#define DBG_PRINTF(PRINTF_MSG) do { printf PRINTF_MSG; } while(0)
+#if 0
+    #define DBG_PRINTF(PRINTF_MSG) do { printf PRINTF_MSG; } while(0)
+#else
+    #define DBG_PRINTF(PRINTF_MSG) do { ; } while(0)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
