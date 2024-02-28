@@ -105,6 +105,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
 
     if (isInDeviceMemory(h_w) == false)
     {
+        printf("copy w: %p\n", h_w);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
     }
@@ -113,6 +114,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
 
     if (isInDeviceMemory(h_x) == false)
     {
+        printf("copy x: %p\n", h_x);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
