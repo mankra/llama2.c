@@ -100,17 +100,21 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     float *d_out{};
 
     // Allocate device memory
-    HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
-    HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
     HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_out, size_out));
 
     if (isInDeviceMemory(h_w) == false)
+    {
+        HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
+    }
     else
         d_w = h_w;
 
     if (isInDeviceMemory(h_x) == false)
+    {
+        HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
+    }
     else
         d_x = h_x;
 
