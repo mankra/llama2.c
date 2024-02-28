@@ -67,6 +67,12 @@ void freeDeviceMemoryAndWeights()
     weights_size = 0;
 }
 
+void copyDeviceWeightsToHost(float *destination, float *source, size_t size)
+{
+    HANDLE_CUDA_RESULT(cudaMemcpy(destination, source, size, cudaMemcpyDeviceToHost));
+    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+}
+
 __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n, int d) {
     int col = blockIdx.x * blockDim.x + threadIdx.x;
 

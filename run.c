@@ -257,10 +257,13 @@ float* forward(Transformer* transformer, int token, int pos) {
     int hidden_dim =  p->hidden_dim;
     int head_size = dim / p->n_heads;
 
-    DBG_PRINTF(("here\n"));
     // copy the token embedding into x
     float* content_row = w->token_embedding_table + token * dim;
+#if defined (ENABLE_CUDA)
     memcpy(x, content_row, dim*sizeof(*x));
+#else
+    copyDeviceWeightsToHost(x, content_row, dim * sizeof(*x));
+#endif
 
     // forward all the layers
     for(unsigned long long l = 0; l < p->n_layers; l++) {
