@@ -754,6 +754,7 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
     char *empty_prompt = "";
     if (prompt == NULL) { prompt = empty_prompt; }
 
+    DBG_PRINTF(("here\n"));
     // encode the (string) prompt into tokens sequence
     int num_prompt_tokens = 0;
     int* prompt_tokens = (int*)malloc((strlen(prompt)+3) * sizeof(int)); // +3 for '\0', ?BOS, ?EOS
@@ -977,7 +978,6 @@ int main(int argc, char *argv[]) {
     Sampler sampler;
     build_sampler(&sampler, transformer.config.vocab_size, temperature, topp, rng_seed);
 
-    DBG_PRINTF(("here\n"));
     // run!
     if (strcmp(mode, "generate") == 0) {
         generate(&transformer, &tokenizer, &sampler, prompt, steps);
