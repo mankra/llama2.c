@@ -180,6 +180,7 @@ void build_transformer(Transformer *t, char* checkpoint_path) {
     read_checkpoint(checkpoint_path, &t->config, &t->weights, &t->fd, &t->data, &t->file_size);
     // allocate the RunState buffers
     malloc_run_state(&t->state, &t->config);
+    DBG_PRINTF(("here\n"));
 }
 
 void free_transformer(Transformer* t) {
@@ -261,7 +262,6 @@ float* forward(Transformer* transformer, int token, int pos) {
     float* content_row = w->token_embedding_table + token * dim;
     memcpy(x, content_row, dim*sizeof(*x));
 
-    DBG_PRINTF(("here\n"));
     // forward all the layers
     for(unsigned long long l = 0; l < p->n_layers; l++) {
 
