@@ -978,6 +978,7 @@ int main(int argc, char *argv[]) {
     Sampler sampler;
     build_sampler(&sampler, transformer.config.vocab_size, temperature, topp, rng_seed);
 
+    printf("mode: %s\n", generate);
     // run!
     if (strcmp(mode, "generate") == 0) {
         generate(&transformer, &tokenizer, &sampler, prompt, steps);
