@@ -59,7 +59,7 @@ void freeDeviceMemoryAndWeights()
 {
     for (auto ptr : pinnedHostMemory)
     {
-        HANDLE_CUDA_RESULT(cudaFree(ptr));
+        HANDLE_CUDA_RESULT(cudaFreeHost(ptr));
     }
 
     HANDLE_CUDA_RESULT(cudaFree(weights));
