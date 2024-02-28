@@ -247,8 +247,6 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
         xout[i] = val;
     }
 }
-#else
-extern void matmul(float* xout, float* x, float* w, int n, int d);
 #endif
 
 float* forward(Transformer* transformer, int token, int pos) {
