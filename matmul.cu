@@ -3,8 +3,14 @@
 #include <cstdio>
 #include <vector>
 
+struct DeviceMemory
+{
+    float *ptr;
+    size_t size;
+};
+
 static std::vector<float *> pinnedHostMemory;
-static std::vector<float *> deviceMemory;
+static std::vector<DeviceMemory> deviceMemory;
 
 #define HANDLE_CUDA_RESULT(FUNC) \
     do { \
@@ -17,9 +23,9 @@ static std::vector<float *> deviceMemory;
 
 static bool isInDeviceMemory(float *ptr)
 {
-    for(const auto p : deviceMemory)
+    for(const auto& dm : deviceMemory)
     {
-        if (p == ptr)
+        if (dm.ptr <= ptr && ptr < dm.ptr + dm.size)
         {
             return true;
         }
@@ -33,7 +39,7 @@ float *allocateDeviceMemory(float *source, size_t size)
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMalloc((void**)&ptr, size));
     HANDLE_CUDA_RESULT(cudaMemcpy(ptr, source, size, cudaMemcpyHostToDevice));
-    deviceMemory.push_back(ptr);
+    deviceMemory.push_back({ptr, size});
     printf("allocated: %p\n", ptr);
     return ptr;
 }
@@ -53,9 +59,9 @@ void freeDeviceMemoryAndWeights()
         HANDLE_CUDA_RESULT(cudaFree(ptr));
     }
 
-    for (auto ptr : deviceMemory)
+    for (auto dm : deviceMemory)
     {
-        HANDLE_CUDA_RESULT(cudaFree(ptr));
+        HANDLE_CUDA_RESULT(cudaFree(dm.ptr));
     }
 }
 
