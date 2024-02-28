@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-float *allocateDeviceMemory(float *src, size_t size);
+float *allocateDeviceWeights(float *source, size_t size);
 float *allocatePinnedHostMemory(size_t size);
 void freeDeviceMemoryAndWeights();
 

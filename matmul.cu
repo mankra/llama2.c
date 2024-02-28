@@ -10,7 +10,8 @@ struct DeviceMemory
 };
 
 static std::vector<float *> pinnedHostMemory;
-static std::vector<DeviceMemory> deviceMemory;
+static float *weights {nullptr};
+static size_t weights_size {0};
 
 #define HANDLE_CUDA_RESULT(FUNC) \
     do { \
@@ -23,31 +24,26 @@ static std::vector<DeviceMemory> deviceMemory;
 
 static bool isInDeviceMemory(float *ptr, size_t size)
 {
-    for(const auto& dm : deviceMemory)
+    if (weights <= ptr && ptr < weights + weights_size)
     {
-        if (dm.ptr <= ptr && ptr < dm.ptr + dm.size)
+        if (weights + weights_size < ptr + size)
         {
-            if (dm.ptr + dm.size < ptr + size)
-            {
-                fprintf(stderr, "Questioned memory is too big for allocated: %p/%zd - %p/%zd\n",
-                    dm.ptr, dm.size, ptr, size);
-                   exit(1);
-            }
-            return true;
+            fprintf(stderr, "Questioned memory is too big for allocated weights: %p/%zd - %p/%zd\n",
+                weights, weights_size, ptr, size);
+               exit(1);
         }
+        return true;
     }
 
     return false;
 }
 
-float *allocateDeviceMemory(float *source, size_t size)
+float *allocateDeviceWeights(float *source, size_t size)
 {
-    float *ptr{nullptr};
-    HANDLE_CUDA_RESULT(cudaMalloc((void**)&ptr, size));
-    HANDLE_CUDA_RESULT(cudaMemcpy(ptr, source, size, cudaMemcpyHostToDevice));
-    deviceMemory.push_back({ptr, size});
-    printf("allocated: %p\n", ptr);
-    return ptr;
+    HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
+    HANDLE_CUDA_RESULT(cudaMemcpy(weights, source, size, cudaMemcpyHostToDevice));
+    weights_size = size;
+    return weights;
 }
 
 float *allocatePinnedHostMemory(size_t size)
@@ -65,10 +61,9 @@ void freeDeviceMemoryAndWeights()
         HANDLE_CUDA_RESULT(cudaFree(ptr));
     }
 
-    for (auto dm : deviceMemory)
-    {
-        HANDLE_CUDA_RESULT(cudaFree(dm.ptr));
-    }
+    HANDLE_CUDA_RESULT(cudaFree(weights));
+    weights = nullptr;
+    weights_size = 0;
 }
 
 __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n, int d) {

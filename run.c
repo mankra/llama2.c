@@ -148,15 +148,6 @@ void memory_map_weights(TransformerWeights *w, Config* p, float* ptr, int shared
     ptr += p->seq_len * head_size / 2; // skip what used to be freq_cis_real (for RoPE)
     ptr += p->seq_len * head_size / 2; // skip what used to be freq_cis_imag (for RoPE)
     w->wcls = shared_weights ? w->token_embedding_table : ptr;
-
-#if defined ENABLE_CUDA
-    w->wo = allocateDeviceMemory(w->wo, n_layers * (p->n_heads * head_size) * p->dim);
-    printf("wo: %p\n", w->wo);
-    w->w1 = allocateDeviceMemory(w->w1, n_layers * p->dim * p->hidden_dim);
-    w->w2 = allocateDeviceMemory(w->w2, n_layers * p->hidden_dim * p->dim);
-    w->w3 = allocateDeviceMemory(w->w3, n_layers * p->dim * p->hidden_dim);
-    //w->wcls = allocateDeviceMemory(w->wcls, );
-#endif
 }
 
 void read_checkpoint(char* checkpoint, Config* config, TransformerWeights* weights,
@@ -178,6 +169,9 @@ void read_checkpoint(char* checkpoint, Config* config, TransformerWeights* weigh
     *data = mmap(NULL, *file_size, PROT_READ, MAP_PRIVATE, *fd, 0);
     if (*data == MAP_FAILED) { fprintf(stderr, "mmap failed!\n"); exit(EXIT_FAILURE); }
     float* weights_ptr = *data + sizeof(Config)/sizeof(float);
+#if defined (ENABLE_CUDA)
+    weights_ptr = allocateDeviceWeights(weights_ptr, *file_size - sizeof(Config)/sizeof(float));
+#endif
     memory_map_weights(weights, config, weights_ptr, shared_weights);
 }
 
