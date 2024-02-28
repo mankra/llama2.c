@@ -13,6 +13,19 @@ static std::vector<float *> deviceMemory;
         exit(1); \
     }
 
+static bool isInDeviceMemory(float *ptr)
+{
+    for(const auto p : deviceMemory)
+    {
+        if (p == ptr)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 float *allocateDeviceWeights(void *data, size_t size)
 {
     if (weights)
@@ -104,8 +117,14 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
     HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_out, size_out));
 
-    HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
-    HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
+    if (isInDeviceMemory(h_w) == false)
+    {
+        HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
+    }
+    if (isInDeviceMemory(h_x) == false)
+    {
+        HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
+    }
 
     dim3 threadsPerBlock{static_cast<unsigned>(d)};
     dim3 blocksPerGrid{1};
