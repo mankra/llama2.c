@@ -88,6 +88,7 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
 void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     static bool isCudaChecked {false};
 
+    DBG_PRINTF(("here\n"));
     if (isCudaChecked == false) {
         int deviceCnt;
         HANDLE_CUDA_RESULT(cudaGetDeviceCount(&deviceCnt));
