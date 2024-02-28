@@ -259,19 +259,19 @@ float* forward(Transformer* transformer, int token, int pos) {
 
     // copy the token embedding into x
     float* content_row = w->token_embedding_table + token * dim;
-    DBG_PRINTF(("here\n"));
 #if ! defined (ENABLE_CUDA)
     memcpy(x, content_row, dim*sizeof(*x));
 #else
     copyDeviceWeightsToHost(x, content_row, dim * sizeof(*x));
 #endif
-    DBG_PRINTF(("HERE\n"));
 
     // forward all the layers
     for(unsigned long long l = 0; l < p->n_layers; l++) {
 
         // attention rmsnorm
+        DBG_PRINTF(("here\n"));
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
+        DBG_PRINTF(("HERE\n"));
 
         // key and value point to the kv cache
         int loff = l * p->seq_len * kv_dim; // kv cache layer offset for convenience
