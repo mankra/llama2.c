@@ -28,6 +28,15 @@ float *allocateDeviceWeights(void *data, size_t size)
     return weights;
 }
 
+float *allocateDeviceMemory(float *source, size_t size)
+{
+    float *ptr{nullptr};
+    handleCudaResult(cudaMalloc((void**)&ptr, size));
+    handleCudaResult(cudaMemcpy((void**)&ptr, source, size, cudaMemcpyHostToDevice));
+    deviceMemory.push_back(ptr);
+    return ptr;
+}
+
 float *allocatePinnedHostMemory(size_t size)
 {
     float *ptr{nullptr};
