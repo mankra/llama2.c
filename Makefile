@@ -34,7 +34,7 @@ runfast: run.c
 runcuda: run.c matmul.o
 	$(CC) -D ENABLE_CUDA=1 -c -O3 -o run.o run.c
 	$(NVCC) -o run run.o matmul.o
-matmul.o: matmul.cu
+matmul.o: matmul.cu matmul.h
 	$(NVCC) -c -O3 -o matmul.o matmul.cu
 
 

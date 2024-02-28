@@ -14,6 +14,10 @@
     #include <sys/mman.h>
 #endif
 
+#if defined ENABLE_CUDA
+    #include "matmul.h"
+#endif
+
 // ----------------------------------------------------------------------------
 // Transformer model
 
@@ -78,10 +82,16 @@ typedef struct {
 void malloc_run_state(RunState* s, Config* p) {
     // we calloc instead of malloc to keep valgrind happy
     int kv_dim = (p->dim * p->n_kv_heads) / p->n_heads;
+#if ! defined ENABLE_CUDA
     s->x = calloc(p->dim, sizeof(float));
 	s->xb = calloc(p->dim, sizeof(float));
-    s->xb2 = calloc(p->dim, sizeof(float));
     s->hb = calloc(p->hidden_dim, sizeof(float));
+#else
+    s->x = allocatePinnedHostMemory(p->dim * sizeof(float));
+    s->xb = allocatePinnedHostMemory(p->dim * sizeof(float));
+    s->hb = allocatePinnedHostMemory(p->hidden_dim * sizeof(float));
+#endif
+    s->xb2 = calloc(p->dim, sizeof(float));
     s->hb2 = calloc(p->hidden_dim, sizeof(float));
     s->q = calloc(p->dim, sizeof(float));
     s->key_cache = calloc(p->n_layers * p->seq_len * kv_dim, sizeof(float));
@@ -159,6 +169,9 @@ void read_checkpoint(char* checkpoint, Config* config, TransformerWeights* weigh
     *data = mmap(NULL, *file_size, PROT_READ, MAP_PRIVATE, *fd, 0);
     if (*data == MAP_FAILED) { fprintf(stderr, "mmap failed!\n"); exit(EXIT_FAILURE); }
     float* weights_ptr = *data + sizeof(Config)/sizeof(float);
+#ifdef CUDA_ENABLE
+    weights_ptr = allocateDeviceWeights(weights_ptr, file_size - sizeof(Config)/sizeof(float));
+#endif
     memory_map_weights(weights, config, weights_ptr, shared_weights);
 }
 
@@ -215,7 +228,7 @@ void softmax(float* x, int size) {
     }
 }
 
-#if ENABLE_CUDA != 1
+#if ! defined ENABLE_CUDA
 void matmul(float* xout, float* x, float* w, int n, int d) {
     // W (d,n) @ x (n,) -> xout (d,)
     // by far the most amount of time is spent inside this little function
@@ -973,6 +986,10 @@ int main(int argc, char *argv[]) {
     free_sampler(&sampler);
     free_tokenizer(&tokenizer);
     free_transformer(&transformer);
+#if defined ENABLE_CUDA
+    freeDeviceMemoryAndWeights();
+#endif
+
     return 0;
 }
 #endif

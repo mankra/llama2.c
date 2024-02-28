@@ -1,4 +1,55 @@
-#include <stdio.h>
+#include "matmul.h"
+
+#include <cstdio>
+#include <vector>
+
+static float *weights { nullptr };
+static std::vector<float *> deviceMemory;
+
+static void handleCudaResult(cudaError_t result)
+{
+    if (result != cudaSuccess)
+    {
+        fprintf(stderr, "Could not get CUDA device count: %s(%d)\n", cudaGetErrorName(result), result);
+        exit(1);
+    }
+}
+
+float *allocateDeviceWeights(void *data, size_t size)
+{
+    if (weights)
+    {
+        handleCudaResult(cudaFree(weights));
+    }
+
+    handleCudaResult(cudaMalloc((void**)&weights, size));
+    handleCudaResult(cudaMemcpy(weights, data, size, cudaMemcpyHostToDevice));
+
+    return weights;
+}
+
+float *allocatePinnedHostMemory(size_t size)
+{
+    float *ptr{nullptr};
+    handleCudaResult(cudaMallocHost((void**)&ptr, size));
+    deviceMemory.push_back(ptr);
+    return ptr;
+}
+
+void freeDeviceMemoryAndWeights()
+{
+    if (weights)
+    {
+        handleCudaResult(cudaFree(weights));
+        weights = nullptr;
+    }
+
+    for (auto ptr : deviceMemory)
+    {
+        handleCudaResult(cudaFree(ptr));
+    }
+    deviceMemory.clear();
+}
 
 __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n, int d) {
     int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -17,20 +68,13 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
     out[col] = sum;
 }
 
-extern "C" {
-
 // W (d,n) @ x (n,) -> xout (d,)
 void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     static bool isCudaChecked {false};
 
     if (isCudaChecked == false) {
         int deviceCnt;
-        cudaError_t ret = cudaGetDeviceCount(&deviceCnt);
-        if (ret != 0)
-        {
-            fprintf(stderr, "Could not get CUDA device count: %s(%d)\n", cudaGetErrorName(ret), ret);
-            exit(1);
-        }
+        handleCudaResult(cudaGetDeviceCount(&deviceCnt));
 
         if (deviceCnt < 1) {
             fprintf(stderr, "No CUDA devices found.\n");
@@ -49,12 +93,12 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     float *d_out{};
 
     // Allocate device memory
-    cudaMalloc((void **) &d_w, size_w);
-    cudaMalloc((void **) &d_x, size_x);
-    cudaMalloc((void **) &d_out, size_out);
+    handleCudaResult(cudaMalloc((void **) &d_w, size_w));
+    handleCudaResult(cudaMalloc((void **) &d_x, size_x));
+    handleCudaResult(cudaMalloc((void **) &d_out, size_out));
 
-    cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice);
+    handleCudaResult(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
+    handleCudaResult(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
 
     dim3 threadsPerBlock{static_cast<unsigned>(d)};
     dim3 blocksPerGrid{1};
@@ -64,16 +108,14 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     }
 
     matrixMultiplicationKernel<<<blocksPerGrid, threadsPerBlock>>>(d_w, d_x, d_out, n, d);
-    cudaDeviceSynchronize();
+    handleCudaResult(cudaDeviceSynchronize());
 
 
-    cudaMemcpy(h_out, d_out, size_out, cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize();
+    handleCudaResult(cudaMemcpy(h_out, d_out, size_out, cudaMemcpyDeviceToHost));
+    handleCudaResult(cudaDeviceSynchronize());
 
     // Deallocate device memory
     cudaFree(d_x);
     cudaFree(d_w);
     cudaFree(d_out);
 }
-
-} // extern "C"
