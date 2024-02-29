@@ -19,12 +19,14 @@ static size_t weights_size {0};
 static bool isInDeviceMemory(float *ptr, size_t size)
 {
     // check before weights to avoid wrong memory assumption.
+#if 0
     for (auto p : pinnedHostMemory)
     {
         if (ptr == p) {
             return false;
         }
     }
+#endif
 
     if (weights <= ptr && ptr < weights + weights_size)
     {
