@@ -84,6 +84,7 @@ typedef struct {
 
 static void printVector(const char *prefix, float* vector, size_t size)
 {
+return;
     printf("%s size: %zd First floats: %f %f %f %f %f %f\n",
            prefix,
            size,
