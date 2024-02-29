@@ -50,7 +50,7 @@ float *allocatePinnedHostMemory(size_t size)
 {
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
-    HANDLE_CUDA_RESULT(cudaMemset(&ptr, 0, size));
+    HANDLE_CUDA_RESULT(cudaMemset(ptr, 0, size));
     pinnedHostMemory.push_back(ptr);
     return ptr;
 }
