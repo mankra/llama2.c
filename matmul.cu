@@ -18,6 +18,14 @@ static size_t weights_size {0};
 
 static bool isInDeviceMemory(float *ptr, size_t size)
 {
+    // check before weights to avoid wrong memory assumption.
+    for (auto p : pinnedHostMemory)
+    {
+        if (ptr == p) {
+            return false;
+        }
+    }
+
     if (weights <= ptr && ptr < weights + weights_size)
     {
         if (weights + weights_size < ptr + size)
@@ -126,7 +134,9 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
     else
+    {
         d_x = h_x;
+    }
 
     dim3 threadsPerBlock{static_cast<unsigned>(d)};
     dim3 blocksPerGrid{1};
