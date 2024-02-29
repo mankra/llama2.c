@@ -17,7 +17,7 @@
 #if defined ENABLE_CUDA
     #include "matmul.h"
 #else
-    #if 1
+    #if 0
     #define DBG_PRINTF(fmt, ...) \
         printf("Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
     #else
@@ -90,6 +90,7 @@ typedef struct {
 
 static void printVector(const char *prefix, float* vector, size_t size)
 {
+return;
     printf("%s size: %zd First floats: %f %f %f %f %f %f\n",
            prefix,
            size,
@@ -329,7 +330,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 #if defined (ENABLE_CUDA)
         DBG_PRINTF("w->wq X s->xb -> s->q xb[0] %f", s->xb[0]);
 #else
-        DBG_PRINTF("w->wq X s->xb -> s->q wq[0] %f w[n*d] %f xb[0] %f xb[dim-1] %f", w->wq[0], w->wq[dim * dim], s->xb[0], s->xb[dim - 1]);
+        DBG_PRINTF("w->wq X s->xb -> s->q wq[0] %f w[n*d] %f xb[0] %f xb[dim-1] %f size %zd", w->wq[0], w->wq[dim * dim], s->xb[0], s->xb[dim - 1], n);
 #endif
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
         printVector("q", s->q, 0);

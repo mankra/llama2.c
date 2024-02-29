@@ -35,9 +35,9 @@ static bool isInDeviceMemory(void *ptr, size_t size)
 
 float *allocateDeviceWeights(float *source, size_t size)
 {
-    HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
-    HANDLE_CUDA_RESULT(cudaMemcpy(weights, source, size, cudaMemcpyHostToDevice));
-    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size * sizeof(float)));
+    HANDLE_CUDA_RESULT(cudaMemcpy(weights, source, size * sizeof(float), cudaMemcpyHostToDevice));
+    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
     weights_size = size;
     DBG_PRINTF("Allocated weights: %p / %zd", weights, size);
     return weights;
@@ -48,7 +48,7 @@ float *allocatePinnedHostMemory(size_t size)
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
     HANDLE_CUDA_RESULT(cudaMemset(ptr, 0, size));
-    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
     pinnedHostMemory.push_back(ptr);
 
     DBG_PRINTF("Allocated pinned memory: %p / %zd", ptr, size);
@@ -113,7 +113,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     const size_t size_x {sizeof(float) * (n)};
     if (!isInDeviceMemory(h_x, size_x))
     {
-        DBG_PRINTF("copy x: %p / %zd h_x[0] %f", h_x, size_x, h_x[0]);
+        DBG_PRINTF("copy x: %p / %zd h_x[0] %f hx[size-1] %f", h_x, size_x, h_x[0], h_x[size_x-1]);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
