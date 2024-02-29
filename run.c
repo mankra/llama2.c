@@ -324,9 +324,11 @@ float* forward(Transformer* transformer, int token, int pos) {
 #endif
 
         // qkv matmuls for this position
+        DBG_PRINTF("***************");
         DBG_PRINTF("w->wq X s->xb -> s->q xb[0] %f", s->xb[0]);
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
         printVector("q", s->q, 0);
+        DBG_PRINTF("***************");
 
         DBG_PRINTF("w->wk X s->xb -> s->k");
         matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
