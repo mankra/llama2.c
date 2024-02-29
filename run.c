@@ -81,6 +81,20 @@ typedef struct {
     ssize_t file_size; // size of the checkpoint file in bytes
 } Transformer;
 
+
+static void printVector(const char *prefix, float* vector, size_t size)
+{
+    printf("%s size: %zd First floats: %f %f %f %f %f %f",
+           prefix,
+           size,
+           vector[0],
+           vector[1],
+           vector[2],
+           vector[3],
+           vector[4],
+           vector[5]
+    );
+}
 void malloc_run_state(RunState* s, Config* p) {
     // we calloc instead of malloc to keep valgrind happy
     int kv_dim = (p->dim * p->n_kv_heads) / p->n_heads;

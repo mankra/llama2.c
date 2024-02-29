@@ -32,20 +32,6 @@ static bool isInDeviceMemory(float *ptr, size_t size)
     return false;
 }
 
-void printVector(const char *prefix, float* vector, size_t size)
-{
-    printf("%s size: %zd First floats: %f %f %f %f %f %f",
-        prefix,
-        size,
-        vector[0],
-        vector[1],
-        vector[2],
-        vector[3],
-        vector[4],
-        vector[5]
-    );
-}
-
 float *allocateDeviceWeights(float *source, size_t size)
 {
     HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
