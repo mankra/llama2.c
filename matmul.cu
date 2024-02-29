@@ -120,6 +120,8 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
         d_x = h_x;
     }
 
+    DBG_PRINTF("h_w[0]: %f h_x[0]: %f d_w[0]: %f d_x[0]: %f", h_w[0], h_x[0], d_w[0], d_x[0]);
+
     dim3 threadsPerBlock{static_cast<unsigned>(d)};
     dim3 blocksPerGrid{1};
     if (d > 512) {
