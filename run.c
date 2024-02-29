@@ -286,6 +286,9 @@ float* forward(Transformer* transformer, int token, int pos) {
         rms_attn_weight = NULL;
 #else
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
+        printVector("rms_attn_weight", w->rms_attn_weight + l*dim, dim);
+        printVector("x", x, dim);
+        printVector("s->xb", s->xb, dim);
 #endif
 
         // key and value point to the kv cache
@@ -381,6 +384,10 @@ float* forward(Transformer* transformer, int token, int pos) {
         rms_ffn_weight = NULL;
 #else
         rmsnorm(s->xb, x, w->rms_ffn_weight + l*dim, dim);
+        printVector("rms_ffn_weight", w->rms_ffn_weight + l*dim, dim);
+        printVector("x", x, dim);
+        printVector("s->xb", s->xb, dim);
+
 #endif
 
         // Now for FFN in PyTorch we have: self.w2(F.silu(self.w1(x)) * self.w3(x))
