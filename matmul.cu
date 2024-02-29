@@ -3,6 +3,13 @@
 #include <cstdio>
 #include <vector>
 
+#if 1
+#define DBG_PRINTF(fmt, ...) \
+    printf("Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#else
+#define DBG_PRINTF(fmt, ...) do {} while (0)
+#endif
+
 static std::vector<float *> pinnedHostMemory;
 static float *weights {nullptr};
 static size_t weights_size {0};
@@ -78,6 +85,10 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
 
     float sum {0.0f};
 
+    if (col == 0)
+    {
+        DBG_PRINTF("first: %f", x[0]);
+    }
     if (col < d)
     {
         for (int i = 0; i < n; i++) {
