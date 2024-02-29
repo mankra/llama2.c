@@ -78,6 +78,8 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
 
     float sum {0.0f};
 
+    if (col == 0)
+        DBG_PRINTF("first: %f", x[0]);
     if (col < d)
     {
         for (int i = 0; i < n; i++) {
