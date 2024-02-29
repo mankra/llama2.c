@@ -147,6 +147,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
 
     // Allocate device memory
     HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_out, size_out));
+    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
     matrixMultiplicationKernel<<<blocksPerGrid, threadsPerBlock>>>(d_w, d_x, d_out, n, d);
     HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
