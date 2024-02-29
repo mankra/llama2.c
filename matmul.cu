@@ -102,7 +102,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     }
     else
     {
-        DBG_PRINTF("use w: %p / %zd h_w[0]", h_w, size_w, h_w[0]);
+        DBG_PRINTF("use w: %p / %zd h_w[0] %f", h_w, size_w, h_w[0]);
         d_w = h_w;
     }
 
@@ -116,7 +116,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     }
     else
     {
-        DBG_PRINTF("use x: %p / %zd h_w[0]", h_x, size_x, h_w[0]);
+        DBG_PRINTF("use x: %p / %zd h_w[0] %f", h_x, size_x, h_w[0]);
         d_x = h_x;
     }
 
