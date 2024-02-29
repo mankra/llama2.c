@@ -37,7 +37,7 @@ float *allocateDeviceWeights(float *source, size_t size)
 {
     HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
     HANDLE_CUDA_RESULT(cudaMemcpy(weights, source, size, cudaMemcpyHostToDevice));
-    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
     weights_size = size;
     DBG_PRINTF("Allocated weights: %p / %zd", weights, size);
     return weights;
@@ -48,7 +48,7 @@ float *allocatePinnedHostMemory(size_t size)
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
     HANDLE_CUDA_RESULT(cudaMemset(ptr, 0, size));
-    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
     pinnedHostMemory.push_back(ptr);
 
     DBG_PRINTF("Allocated pinned memory: %p / %zd", ptr, size);
