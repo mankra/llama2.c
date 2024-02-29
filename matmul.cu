@@ -96,13 +96,13 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     const size_t size_w {sizeof(float) * (n * d)};
     if (!isInDeviceMemory(h_w, size_w))
     {
-        DBG_PRINTF("copy w: %p / %zd", h_w, size_w);
+        DBG_PRINTF("copy w: %p / %zd h_w[0] %f", h_w, size_w, h_w[0]);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
     }
     else
     {
-        DBG_PRINTF("use w: %p / %zd h_w[0] %f", h_w, size_w, h_w[0]);
+        DBG_PRINTF("use w: %p / %zd", h_w, size_w);
         d_w = h_w;
     }
 
@@ -110,13 +110,13 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     const size_t size_x {sizeof(float) * (n)};
     if (!isInDeviceMemory(h_x, size_x))
     {
-        DBG_PRINTF("copy x: %p / %zd", h_x, size_x);
+        DBG_PRINTF("copy x: %p / %zd h_x[0] %f", h_x, size_x, h_x[0]);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
     else
     {
-        DBG_PRINTF("use x: %p / %zd h_w[0] %f", h_x, size_x, h_w[0]);
+        DBG_PRINTF("use x: %p / %zd", h_x, size_x);
         d_x = h_x;
     }
 
