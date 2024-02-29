@@ -84,7 +84,6 @@ typedef struct {
 
 static void printVector(const char *prefix, float* vector, size_t size)
 {
-    return;
     printf("%s size: %zd First floats: %f %f %f %f %f %f\n",
            prefix,
            size,
@@ -310,7 +309,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         s->v = s->value_cache + loff + pos * kv_dim;
 
         // qkv matmuls for this position
-        DBG_PRINTF("1");
+        DBG_PRINTF("w->wq X s->xb -> s->q");
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
 
 #if defined (ENABLE_CUDA)
@@ -323,9 +322,9 @@ float* forward(Transformer* transformer, int token, int pos) {
         printVector("wq", w->wq + l*dim*dim, 0);
 #endif
 
-        DBG_PRINTF("2");
+        DBG_PRINTF("w->wk X s->xb -> s->k");
         matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
-        DBG_PRINTF("3");
+        DBG_PRINTF("w->wv X s->xb -> s->v");
         matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
         printVector("q", s->q, 0);
