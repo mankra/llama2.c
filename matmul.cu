@@ -83,58 +83,42 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
     if (col < d)
     {
         for (int i = 0; i < n; i++) {
-            // DBG_PRINTF(("COL: %d i: %d w: %f x: %f\n", col, i, w[col * n + i], x[i]));
+            // DBG_PRINTF("COL: %d i: %d w: %f x: %f\n", col, i, w[col * n + i], x[i]);
             sum += w[col * n + i] * x[i];
         }
     }
 
-    // DBG_PRINTF(("COL: %d n: %d d: %d sum: %f\n", col, n, d, sum));
+    // DBG_PRINTF("COL: %d n: %d d: %d sum: %f\n", col, n, d, sum);
     out[col] = sum;
 }
 
 // W (d,n) @ x (n,) -> xout (d,)
 void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
-    static bool isCudaChecked {false};
-
-    if (isCudaChecked == false) {
-        int deviceCnt;
-        HANDLE_CUDA_RESULT(cudaGetDeviceCount(&deviceCnt));
-
-        if (deviceCnt < 1) {
-            fprintf(stderr, "No CUDA devices found.\n");
-            exit(EXIT_FAILURE);
-        }
-
-        isCudaChecked = true;
-    }
-
-    const size_t size_w = sizeof(float) * (n * d);
-    const size_t size_x = sizeof(float) * (n);
-    const size_t size_out = sizeof(float) * (d);
-
-    float *d_x{};
-    float *d_w{};
-    float *d_out{};
-
-    if (isInDeviceMemory(h_w, size_w) == false)
+    float *d_w {};
+    const size_t size_w {sizeof(float) * (n * d)};
+    if (!isInDeviceMemory(h_w, size_w))
     {
-        DBG_PRINTF(("copy w: %p\n", h_w));
+        DBG_PRINTF("copy w: %p\n", h_w);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
     }
     else
     {
+        DBG_PRINTF("use w: %p\n", h_x);
         d_w = h_w;
     }
 
-    if (isInDeviceMemory(h_x, size_x) == false)
+    float *d_x {};
+    const size_t size_x {sizeof(float) * (n)};
+    if (!isInDeviceMemory(h_x, size_x))
     {
-        DBG_PRINTF(("copy x: %p\n", h_x));
+        DBG_PRINTF("copy x: %p\n", h_x);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
     else
     {
+        DBG_PRINTF("use x: %p\n", h_x);
         d_x = h_x;
     }
 
@@ -146,6 +130,8 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     }
 
     // Allocate device memory
+    float *d_out{};
+    const size_t size_out = sizeof(float) * (d);
     HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_out, size_out));
     HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
