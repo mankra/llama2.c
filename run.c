@@ -321,7 +321,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 #if defined (ENABLE_CUDA)
         float *wq = (float*)calloc(dim, sizeof(float));
         copyDeviceWeightsToHost(wq, w->wq + l*dim*dim, dim);
-        printVector("wq", w->wq, 0);
+        printVector("wq", wq, 0);
         free(wq);
         wq = NULL;
 #else
