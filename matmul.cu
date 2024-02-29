@@ -104,7 +104,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     }
     else
     {
-        DBG_PRINTF("use w: %p\n", h_x);
+        DBG_PRINTF("use w: %p\n", h_w);
         d_w = h_w;
     }
 
