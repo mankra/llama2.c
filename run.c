@@ -318,6 +318,10 @@ float* forward(Transformer* transformer, int token, int pos) {
         DBG_PRINTF(("3\n"));
         matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
+        printVector("q", s->q, 0);
+        printVector("k", s->k, 0);
+        printVector("v", s->v, 0);
+
         // RoPE relative positional encoding: complex-valued rotate q and k in each head
         for (int i = 0; i < dim; i+=2) {
             int head_dim = i % head_size;
@@ -378,6 +382,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         // final matmul to get the output of the attention
         DBG_PRINTF(("4\n"));
         matmul(s->xb2, s->xb, w->wo + l*dim*dim, dim, dim);
+        printVector("xb2", s->xb2, 0);
 
         // residual connection back into x
         for (int i = 0; i < dim; i++) {
