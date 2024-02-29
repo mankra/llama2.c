@@ -35,8 +35,8 @@ static bool isInDeviceMemory(void *ptr, size_t size)
 
 float *allocateDeviceWeights(float *source, size_t size)
 {
-    HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
-    HANDLE_CUDA_RESULT(cudaMemcpy(weights, source, size, cudaMemcpyHostToDevice));
+    HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size * sizeof(float)));
+    HANDLE_CUDA_RESULT(cudaMemcpy(weights, source, size * sizeof(float), cudaMemcpyHostToDevice));
     //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
     weights_size = size;
     DBG_PRINTF("Allocated weights: %p / %zd", weights, size);
