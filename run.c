@@ -293,17 +293,15 @@ float* forward(Transformer* transformer, int token, int pos) {
         rmsnorm(s->xb, x, rms_attn_weight, dim);
 
         printVector("rms_attn_weight", rms_attn_weight, dim);
-        printVector("x", x, dim);
-        printVector("s->xb", s->xb, dim);
 
         free(rms_attn_weight);
         rms_attn_weight = NULL;
 #else
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
         printVector("rms_attn_weight", w->rms_att_weight + l*dim, dim);
+#endif
         printVector("x", x, dim);
         printVector("s->xb", s->xb, dim);
-#endif
 
         // key and value point to the kv cache
         int loff = l * p->seq_len * kv_dim; // kv cache layer offset for convenience
@@ -313,10 +311,6 @@ float* forward(Transformer* transformer, int token, int pos) {
         // qkv matmuls for this position
         DBG_PRINTF(("1\n"));
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
-        DBG_PRINTF(("2\n"));
-        matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
-        DBG_PRINTF(("3\n"));
-        matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
 #if defined (ENABLE_CUDA)
         float *wq = (float*)calloc(dim, sizeof(float));
@@ -327,6 +321,12 @@ float* forward(Transformer* transformer, int token, int pos) {
 #else
         printVector("wq", w->wq + l*dim*dim, 0);
 #endif
+
+        DBG_PRINTF(("2\n"));
+        matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
+        DBG_PRINTF(("3\n"));
+        matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
+
         printVector("q", s->q, 0);
         printVector("k", s->k, 0);
         printVector("v", s->v, 0);
