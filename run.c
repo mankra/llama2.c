@@ -310,7 +310,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         s->v = s->value_cache + loff + pos * kv_dim;
 
         // qkv matmuls for this position
-        DBG_PRINTF("1\n");
+        DBG_PRINTF("1");
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
 
 #if defined (ENABLE_CUDA)
@@ -323,9 +323,9 @@ float* forward(Transformer* transformer, int token, int pos) {
         printVector("wq", w->wq + l*dim*dim, 0);
 #endif
 
-        DBG_PRINTF("2\n");
+        DBG_PRINTF("2");
         matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
-        DBG_PRINTF("3\n");
+        DBG_PRINTF("3");
         matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
         printVector("q", s->q, 0);
@@ -390,7 +390,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // final matmul to get the output of the attention
-        DBG_PRINTF("4\n");
+        DBG_PRINTF("4");
         matmul(s->xb2, s->xb, w->wo + l*dim*dim, dim, dim);
         printVector("xb2", s->xb2, 0);
 
@@ -421,9 +421,9 @@ float* forward(Transformer* transformer, int token, int pos) {
 
         // Now for FFN in PyTorch we have: self.w2(F.silu(self.w1(x)) * self.w3(x))
         // first calculate self.w1(x) and self.w3(x)
-        DBG_PRINTF("5\n");
+        DBG_PRINTF("5");
         matmul(s->hb, s->xb, w->w1 + l*dim*hidden_dim, dim, hidden_dim);
-        DBG_PRINTF("6\n");
+        DBG_PRINTF("6");
         matmul(s->hb2, s->xb, w->w3 + l*dim*hidden_dim, dim, hidden_dim);
 
         // SwiGLU non-linearity
@@ -437,7 +437,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // final matmul to get the output of the ffn
-        DBG_PRINTF("7\n");
+        DBG_PRINTF("7");
         matmul(s->xb, s->hb, w->w2 + l*dim*hidden_dim, hidden_dim, dim);
 
         // residual connection
@@ -458,7 +458,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 #endif
 
     // classifier into logits
-    DBG_PRINTF("8\n");
+    DBG_PRINTF("8");
     matmul(s->logits, x, w->wcls, p->dim, p->vocab_size);
     return s->logits;
 }

@@ -54,6 +54,8 @@ float *allocatePinnedHostMemory(size_t size)
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
     HANDLE_CUDA_RESULT(cudaMemset(ptr, 0, size));
     pinnedHostMemory.push_back(ptr);
+
+    DBG_PRINTF("Allocated pinned memory: %p", ptr);
     return ptr;
 }
 
@@ -83,12 +85,12 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
     if (col < d)
     {
         for (int i = 0; i < n; i++) {
-            // DBG_PRINTF("COL: %d i: %d w: %f x: %f\n", col, i, w[col * n + i], x[i]);
+            // DBG_PRINTF("COL: %d i: %d w: %f x: %f", col, i, w[col * n + i], x[i]);
             sum += w[col * n + i] * x[i];
         }
     }
 
-    // DBG_PRINTF("COL: %d n: %d d: %d sum: %f\n", col, n, d, sum);
+    // DBG_PRINTF("COL: %d n: %d d: %d sum: %f", col, n, d, sum);
     out[col] = sum;
 }
 
@@ -98,13 +100,13 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     const size_t size_w {sizeof(float) * (n * d)};
     if (!isInDeviceMemory(h_w, size_w))
     {
-        DBG_PRINTF("copy w: %p\n", h_w);
+        DBG_PRINTF("copy w: %p", h_w);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
     }
     else
     {
-        DBG_PRINTF("use w: %p\n", h_w);
+        DBG_PRINTF("use w: %p", h_w);
         d_w = h_w;
     }
 
@@ -112,13 +114,13 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     const size_t size_x {sizeof(float) * (n)};
     if (!isInDeviceMemory(h_x, size_x))
     {
-        DBG_PRINTF("copy x: %p\n", h_x);
+        DBG_PRINTF("copy x: %p", h_x);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
     else
     {
-        DBG_PRINTF("use x: %p\n", h_x);
+        DBG_PRINTF("use x: %p", h_x);
         d_x = h_x;
     }
 
