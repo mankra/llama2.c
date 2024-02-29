@@ -277,6 +277,11 @@ float* forward(Transformer* transformer, int token, int pos) {
         float *rms_attn_weight = (float*)calloc(dim, sizeof(float));
         copyDeviceWeightsToHost(rms_attn_weight, w->rms_att_weight + l*dim, dim);
         rmsnorm(s->xb, x, rms_attn_weight, dim);
+
+        printVector("rms_attn_weight", rms_attn_weight, dim);
+        printVector("x", x, dim);
+        printVector("s->xb", s->xb, dim);
+
         free(rms_attn_weight);
         rms_attn_weight = NULL;
 #else
@@ -367,6 +372,11 @@ float* forward(Transformer* transformer, int token, int pos) {
         float *rms_ffn_weight = (float*)calloc(dim, sizeof(float));
         copyDeviceWeightsToHost(rms_ffn_weight, w->rms_ffn_weight + l*dim, dim);
         rmsnorm(s->xb, x, rms_ffn_weight, dim);
+
+        printVector("rms_ffn_weight", rms_ffn_weight, dim);
+        printVector("x", x, dim);
+        printVector("s->xb", s->xb, dim);
+
         free(rms_ffn_weight);
         rms_ffn_weight = NULL;
 #else

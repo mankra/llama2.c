@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+void printVector(const char *prefix, float* vector, size_t size);
+
 float *allocateDeviceWeights(float *source, size_t size);
 float *allocatePinnedHostMemory(size_t size);
 void freeDeviceMemoryAndWeights();
