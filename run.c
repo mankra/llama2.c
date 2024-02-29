@@ -318,7 +318,15 @@ float* forward(Transformer* transformer, int token, int pos) {
         DBG_PRINTF(("3\n"));
         matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
+#if defined (ENABLE_CUDA)
+        float *wq = (float*)calloc(dim, sizeof(float));
+        copyDeviceWeightsToHost(wq, w->wq + l*dim*dim, dim);
         printVector("wq", w->wq, 0);
+        free(wq);
+        wq = NULL;
+#else
+        printVector("wq", w->wq + l*dim*dim, 0);
+#endif
         printVector("q", s->q, 0);
         printVector("k", s->k, 0);
         printVector("v", s->v, 0);
