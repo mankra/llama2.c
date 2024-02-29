@@ -318,6 +318,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         DBG_PRINTF(("3\n"));
         matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
+        printVector("wq", w->wq, 0);
         printVector("q", s->q, 0);
         printVector("k", s->k, 0);
         printVector("v", s->v, 0);
