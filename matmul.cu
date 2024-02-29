@@ -16,7 +16,7 @@ static size_t weights_size {0};
         } \
     } while(0)
 
-static bool isInDeviceMemory(float *ptr, size_t size)
+static bool isInDeviceMemory(void *ptr, size_t size)
 {
     // check before weights to avoid wrong memory assumption.
 #if 0
@@ -28,10 +28,10 @@ static bool isInDeviceMemory(float *ptr, size_t size)
     }
 #endif
 
-    DBG_PRINTF("weights: %p, weights_end: %p, ptr: %p, ptr_end: %p", weights, weights+weights_size, ptr, ptr+size);
-    if (weights <= ptr && ptr < weights + weights_size)
+    DBG_PRINTF("weights: %p, weights_end: %p, ptr: %p, ptr_end: %p", weights, (char*)weights+weights_size, ptr, (char*)ptr+size);
+    if ((char*)weights <= ptr && ptr < (char*)weights + weights_size)
     {
-        if (weights + weights_size < ptr + size)
+        if ((char*)weights + weights_size < (char*)ptr + size)
         {
             fprintf(stderr, "Questioned memory is too big for allocated weights: %p/%zd - %p/%zd\n",
                 weights, weights_size, ptr, size);
@@ -47,7 +47,7 @@ float *allocateDeviceWeights(float *source, size_t size)
 {
     HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
     HANDLE_CUDA_RESULT(cudaMemcpy(weights, source, size, cudaMemcpyHostToDevice));
-    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
     weights_size = size;
     DBG_PRINTF("Allocated weights: %p / %zd", weights, size);
     return weights;
@@ -58,7 +58,7 @@ float *allocatePinnedHostMemory(size_t size)
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
     HANDLE_CUDA_RESULT(cudaMemset(ptr, 0, size));
-    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
     pinnedHostMemory.push_back(ptr);
 
     DBG_PRINTF("Allocated pinned memory: %p / %zd", ptr, size);
