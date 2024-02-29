@@ -28,7 +28,7 @@ static bool isInDeviceMemory(float *ptr, size_t size)
     }
 #endif
 
-    DBG_PRINTF("weights: %p, weights_end: %p, ptr: %p, ptr_end: %p", weights, weights+weights_size, ptr, size);
+    DBG_PRINTF("weights: %p, weights_end: %p, ptr: %p, ptr_end: %p", weights, weights+weights_size, ptr, ptr+size);
     if (weights <= ptr && ptr < weights + weights_size)
     {
         if (weights + weights_size < ptr + size)
