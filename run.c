@@ -308,10 +308,6 @@ float* forward(Transformer* transformer, int token, int pos) {
         s->k = s->key_cache + loff + pos * kv_dim;
         s->v = s->value_cache + loff + pos * kv_dim;
 
-        // qkv matmuls for this position
-        DBG_PRINTF("w->wq X s->xb -> s->q");
-        matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
-
 #if defined (ENABLE_CUDA)
         float *wq = (float*)calloc(dim, sizeof(float));
         copyDeviceWeightsToHost(wq, w->wq + l*dim*dim, dim);
@@ -322,12 +318,16 @@ float* forward(Transformer* transformer, int token, int pos) {
         printVector("wq", w->wq + l*dim*dim, 0);
 #endif
 
+        // qkv matmuls for this position
+        DBG_PRINTF("w->wq X s->xb -> s->q");
+        matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
+        printVector("q", s->q, 0);
+
         DBG_PRINTF("w->wk X s->xb -> s->k");
         matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
         DBG_PRINTF("w->wv X s->xb -> s->v");
         matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
-        printVector("q", s->q, 0);
         printVector("k", s->k, 0);
         printVector("v", s->v, 0);
 

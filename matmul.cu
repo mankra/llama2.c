@@ -18,17 +18,7 @@ static size_t weights_size {0};
 
 static bool isInDeviceMemory(void *ptr, size_t size)
 {
-    // check before weights to avoid wrong memory assumption.
-#if 0
-    for (auto p : pinnedHostMemory)
-    {
-        if (ptr == p) {
-            return false;
-        }
-    }
-#endif
-
-    DBG_PRINTF("weights: %p, weights_end: %p, ptr: %p, ptr_end: %p", weights, (char*)weights+weights_size, ptr, (char*)ptr+size);
+    //DBG_PRINTF("weights: %p, weights_end: %p, ptr: %p, ptr_end: %p", weights, (char*)weights+weights_size, ptr, (char*)ptr+size);
     if ((char*)weights <= ptr && ptr < (char*)weights + weights_size)
     {
         if ((char*)weights + weights_size < (char*)ptr + size)
