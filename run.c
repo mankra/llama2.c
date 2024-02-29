@@ -326,7 +326,11 @@ float* forward(Transformer* transformer, int token, int pos) {
 
         // qkv matmuls for this position
         DBG_PRINTF("***************");
+#if defined (ENABLE_CUDA)
         DBG_PRINTF("w->wq X s->xb -> s->q xb[0] %f", s->xb[0]);
+#else
+        DBG_PRINTF("w->wq X s->xb -> s->q xb[0] %f wq[0] %f", s->xb[0], w->wq[0]);
+#endif
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
         printVector("q", s->q, 0);
         DBG_PRINTF("***************");
