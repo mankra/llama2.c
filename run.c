@@ -16,14 +16,15 @@
 
 #if defined ENABLE_CUDA
     #include "matmul.h"
+#else
+    #if 1
+    #define DBG_PRINTF(fmt, ...) \
+        printf("Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+    #else
+    #define DBG_PRINTF(fmt, ...) do {} while (0)
+    #endif
 #endif
 
-#if 1
-#define DBG_PRINTF(fmt, ...) \
-    printf("Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
-#else
-#define DBG_PRINTF(fmt, ...) do {} while (0)
-#endif
 
 // ----------------------------------------------------------------------------
 // Transformer model

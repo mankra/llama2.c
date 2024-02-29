@@ -5,6 +5,13 @@
 #ifndef LLAMA2_C_MATMUL_H
 #define LLAMA2_C_MATMUL_H
 
+#if 1
+#define DBG_PRINTF(fmt, ...) \
+    printf("Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#else
+#define DBG_PRINTF(fmt, ...) do {} while (0)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
