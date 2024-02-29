@@ -300,7 +300,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         rms_attn_weight = NULL;
 #else
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
-        printVector("rms_attn_weight", w->rms_attn_weight + l*dim, dim);
+        printVector("rms_attn_weight", w->rms_att_weight + l*dim, dim);
         printVector("x", x, dim);
         printVector("s->xb", s->xb, dim);
 #endif
