@@ -113,7 +113,7 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     const size_t size_x {sizeof(float) * (n)};
     if (!isInDeviceMemory(h_x, size_x))
     {
-        DBG_PRINTF("copy x: %p / %zd h_x[0] %f hx[size-1] %f", h_x, size_x, h_x[0], h_x[size_x-1]);
+        DBG_PRINTF("copy x: %p / %zd h_x[0] %f", h_x, size_x, h_x[0]);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
