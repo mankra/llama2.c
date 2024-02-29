@@ -16,8 +16,13 @@
 
 #if defined ENABLE_CUDA
     #include "matmul.h"
+#endif
+
+#if 1
+#define DBG_PRINTF(fmt, ...) \
+    fprintf(stderr, "Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #else
-    #define DBG_PRINTF(PRINTF_MSG) do { ; } while(0)
+#define DBG_PRINTF(fmt, ...) do {} while (0)
 #endif
 
 // ----------------------------------------------------------------------------
