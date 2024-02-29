@@ -5,7 +5,7 @@
 #ifndef LLAMA2_C_MATMUL_H
 #define LLAMA2_C_MATMUL_H
 
-#if 0
+#if 1
     #define DBG_PRINTF(PRINTF_MSG) do { printf PRINTF_MSG; } while(0)
 #else
     #define DBG_PRINTF(PRINTF_MSG) do { ; } while(0)
