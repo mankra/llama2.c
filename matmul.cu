@@ -116,26 +116,28 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     float *d_w{};
     float *d_out{};
 
+    HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
     if (isInDeviceMemory(h_w, size_w) == false)
     {
         DBG_PRINTF(("copy w: %p\n", h_w));
-        HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
     }
     else
     {
-        d_w = h_w;
+        DBG_PRINTF(("dev w: %p\n", h_w));
+        HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyDeviceToDevice));
     }
 
+    HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
     if (isInDeviceMemory(h_x, size_x) == false)
     {
         DBG_PRINTF(("copy x: %p\n", h_x));
-        HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
     else
     {
-        d_x = h_x;
+        DBG_PRINTF(("dev x: %p\n", h_w));
+        HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyDeviceToDevice));
     }
 
     dim3 threadsPerBlock{static_cast<unsigned>(d)};
