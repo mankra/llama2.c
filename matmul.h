@@ -5,7 +5,7 @@
 #ifndef LLAMA2_C_MATMUL_H
 #define LLAMA2_C_MATMUL_H
 
-#if 0
+#if defined (DEBUG)
 #define DBG_PRINTF(fmt, ...) \
     printf("Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #else

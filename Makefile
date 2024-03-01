@@ -3,10 +3,13 @@
 CC = gcc
 NVCC = nvcc
 
+#DEBUG = -D DEBUG_VECTOR=1 -D DEBUG=1
+#DEBUG = -D DEBUG=1
+
 # the most basic way of building that is most likely to work on most systems
 .PHONY: run
 run: run.c
-	$(CC) -O3 -o run run.c -lm
+	$(CC) $(DEBUG) -O3 -o run run.c -lm
 	$(CC) -O3 -o runq runq.c -lm
 
 # useful for a debug build, can then e.g. analyze with valgrind, example:
@@ -32,7 +35,7 @@ runfast: run.c
 # Same as run, but with CUDA support
 .PHONY: runcuda
 runcuda: run.c matmul.o
-	$(CC) -D ENABLE_CUDA=1 -c -O3 -o run.o run.c
+	$(CC) $(DEBUG) -D ENABLE_CUDA=1 -c -O3 -o run.o run.c
 	$(NVCC) -o run run.o matmul.o
 matmul.o: matmul.cu matmul.h
 	$(NVCC) -c -O3 -o matmul.o matmul.cu

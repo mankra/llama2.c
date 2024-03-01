@@ -17,7 +17,7 @@
 #if defined ENABLE_CUDA
     #include "matmul.h"
 #else
-    #if 0
+    #if defined (DEBUG)
     #define DBG_PRINTF(fmt, ...) \
         printf("Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
     #else
@@ -90,8 +90,8 @@ typedef struct {
 
 static void printVector(const char *prefix, float* vector, size_t size)
 {
-return;
-    printf("%s size: %zd First floats: %f %f %f %f %f %f\n",
+#if defined (DEBUG_VECTOR)
+    printf("Vector %s size: %zd First floats: %f %f %f %f %f %f\n",
            prefix,
            size,
            vector[0],
@@ -101,6 +101,7 @@ return;
            vector[4],
            vector[5]
     );
+#endif
 }
 void malloc_run_state(RunState* s, Config* p) {
     // we calloc instead of malloc to keep valgrind happy
@@ -195,7 +196,7 @@ void read_checkpoint(char* checkpoint, Config* config, TransformerWeights* weigh
     if (*data == MAP_FAILED) { fprintf(stderr, "mmap failed!\n"); exit(EXIT_FAILURE); }
     float* weights_ptr = *data + sizeof(Config)/sizeof(float);
 #if defined (ENABLE_CUDA)
-    weights_ptr = allocateDeviceWeights(weights_ptr, *file_size - sizeof(Config)/sizeof(float));
+    weights_ptr = allocateDeviceWeights(weights_ptr, *file_size - sizeof(Config));
 #endif
     memory_map_weights(weights, config, weights_ptr, shared_weights);
 }
@@ -292,11 +293,12 @@ float* forward(Transformer* transformer, int token, int pos) {
 
     // forward all the layers
     for(unsigned long long l = 0; l < p->n_layers; l++) {
+        DBG_PRINTF("l: %llu", l);
 
         // attention rmsnorm
 #if defined (ENABLE_CUDA)
         float *rms_attn_weight = (float*)calloc(dim, sizeof(float));
-        copyDeviceWeightsToHost(rms_attn_weight, w->rms_att_weight + l*dim, dim);
+        copyDeviceWeightsToHost(rms_attn_weight, w->rms_att_weight + l*dim, dim * sizeof(float));
         rmsnorm(s->xb, x, rms_attn_weight, dim);
 
         printVector("rms_attn_weight", rms_attn_weight, dim);
@@ -317,7 +319,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 
 #if defined (ENABLE_CUDA)
         float *wq = (float*)calloc(dim, sizeof(float));
-        copyDeviceWeightsToHost(wq, w->wq + l*dim*dim, dim);
+        copyDeviceWeightsToHost(wq, w->wq + l*dim*dim, dim * sizeof(float));
         printVector("wq", wq, 0);
         free(wq);
         wq = NULL;
@@ -330,7 +332,8 @@ float* forward(Transformer* transformer, int token, int pos) {
 #if defined (ENABLE_CUDA)
         DBG_PRINTF("w->wq X s->xb -> s->q xb[0] %f", s->xb[0]);
 #else
-        DBG_PRINTF("w->wq X s->xb -> s->q wq[0] %f w[n*d] %f xb[0] %f xb[dim-1] %f", w->wq[0], w->wq[dim * dim], s->xb[0], s->xb[dim - 1]);
+        //DBG_PRINTF("w->wq X s->xb -> s->q wq[0] %f w[n*d] %f xb[0] %f xb[dim-1] %f", w->wq[0], w->wq[dim * dim], s->xb[0], s->xb[dim - 1]);
+        DBG_PRINTF("w->wq X s->xb -> s->q xb[0] %f", s->xb[0]);
 #endif
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
         printVector("q", s->q, 0);
@@ -414,7 +417,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         // ffn rmsnorm
 #if defined (ENABLE_CUDA)
         float *rms_ffn_weight = (float*)calloc(dim, sizeof(float));
-        copyDeviceWeightsToHost(rms_ffn_weight, w->rms_ffn_weight + l*dim, dim);
+        copyDeviceWeightsToHost(rms_ffn_weight, w->rms_ffn_weight + l*dim, dim * sizeof(float));
         rmsnorm(s->xb, x, rms_ffn_weight, dim);
 
         printVector("rms_ffn_weight", rms_ffn_weight, dim);
@@ -461,7 +464,7 @@ float* forward(Transformer* transformer, int token, int pos) {
     // final rmsnorm
 #if defined (ENABLE_CUDA)
     float *rms_final_weight = (float*)calloc(dim, sizeof(float));
-    copyDeviceWeightsToHost(rms_final_weight, w->rms_final_weight, dim);
+    copyDeviceWeightsToHost(rms_final_weight, w->rms_final_weight, dim * sizeof(float));
     rmsnorm(s->xb, x, rms_final_weight, dim);
     free(rms_final_weight);
     rms_final_weight = NULL;
@@ -859,7 +862,7 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
     int token = prompt_tokens[0]; // kick off with the first token in the prompt
     int pos = 0;     // position in the sequence
     while (pos < steps) {
-
+        DBG_PRINTF("pos: %d", pos);
         // forward the transformer to get logits for the next token
         float* logits = forward(transformer, token, pos);
 
