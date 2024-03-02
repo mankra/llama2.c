@@ -283,12 +283,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 
         // attention rmsnorm
 #if defined (ENABLE_CUDA)
-        float *rms_attn_weight = (float*)calloc(dim, sizeof(float));
-        copyDeviceWeightsToHost(rms_attn_weight, w->rms_att_weight + l*dim, dim * sizeof(float));
-        rmsnorm(s->xb, x, rms_attn_weight, dim);
-
-        free(rms_attn_weight);
-        rms_attn_weight = NULL;
+        rmsnorm(s->xb, x, getTemporaryDeviceValues(w->rms_att_weight + l*dim, dim), dim);
 #else
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
 #endif
@@ -297,13 +292,6 @@ float* forward(Transformer* transformer, int token, int pos) {
         int loff = l * p->seq_len * kv_dim; // kv cache layer offset for convenience
         s->k = s->key_cache + loff + pos * kv_dim;
         s->v = s->value_cache + loff + pos * kv_dim;
-
-#if defined (ENABLE_CUDA)
-        float *wq = (float*)calloc(dim, sizeof(float));
-        copyDeviceWeightsToHost(wq, w->wq + l*dim*dim, dim * sizeof(float));
-        free(wq);
-        wq = NULL;
-#endif
 
         // qkv matmuls for this position
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
@@ -377,12 +365,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 
         // ffn rmsnorm
 #if defined (ENABLE_CUDA)
-        float *rms_ffn_weight = (float*)calloc(dim, sizeof(float));
-        copyDeviceWeightsToHost(rms_ffn_weight, w->rms_ffn_weight + l*dim, dim * sizeof(float));
-        rmsnorm(s->xb, x, rms_ffn_weight, dim);
-
-        free(rms_ffn_weight);
-        rms_ffn_weight = NULL;
+        rmsnorm(s->xb, x, getTemporaryDeviceValues(w->rms_ffn_weight + l*dim, dim), dim);
 #else
         rmsnorm(s->xb, x, w->rms_ffn_weight + l*dim, dim);
 #endif
@@ -414,13 +397,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 
     // final rmsnorm
 #if defined (ENABLE_CUDA)
-    float *rms_final_weight = (float*)calloc(dim, sizeof(float));
-    copyDeviceWeightsToHost(rms_final_weight, w->rms_final_weight, dim * sizeof(float));
-
-    rmsnorm(x, x, rms_final_weight, dim);
-
-    free(rms_final_weight);
-    rms_final_weight = NULL;
+    rmsnorm(x, x, getTemporaryDeviceValues(w->rms_final_weight, dim), dim);
 #else
     rmsnorm(x, x, w->rms_final_weight, dim);
 #endif

@@ -18,9 +18,10 @@ extern "C" {
 
 float *allocateDeviceWeights(float *source, size_t size);
 float *allocatePinnedHostMemory(size_t size);
+void copyDeviceWeightsToHost(float *destination, float *source, size_t size);
+float* getTemporaryDeviceValues(float *d_src, size_t dim);
 void freeDeviceMemoryAndWeights();
 
-void copyDeviceWeightsToHost(float *destination, float *source, size_t size);
 
 void matmul(float *h_out, float *h_x, float *h_w, int n, int d);
 

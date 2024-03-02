@@ -4,8 +4,8 @@ Basically, we have a bunch of versions of the model, and we
 want to export them to .bin files to be read from and inferenced in C.
 
 Among the "input" versions of PyTorch files/models:
-- Official Llama 2 weights released by Meta
-- Huggingface weights available on the hub
+- Official Llama 2 d_weights released by Meta
+- Huggingface d_weights available on the hub
 - llama2.c (this repo) trained models
 
 Among the "output" versions of .bin files:
@@ -131,7 +131,7 @@ def legacy_export(model, filepath):
 
 def version1_export(model, filepath):
     """
-    Export the model weights in full float32 .bin file to be read from C.
+    Export the model d_weights in full float32 .bin file to be read from C.
     This is same as legacy_export, but with a proper header.
     """
     version = 1
@@ -157,7 +157,7 @@ def version1_export(model, filepath):
     out_file.write(b'\0' * pad)
 
     # now let's write out all the params
-    weights = [
+    d_weights = [
         *[layer.attention_norm.weight for layer in model.layers],
         *[layer.ffn_norm.weight for layer in model.layers],
         model.norm.weight,
@@ -171,8 +171,8 @@ def version1_export(model, filepath):
         *[layer.feed_forward.w3.weight for layer in model.layers],
     ]
     if not shared_classifier:
-        weights.append(model.output.weight)
-    for w in weights:
+        d_weights.append(model.output.weight)
+    for w in d_weights:
         serialize_fp32(out_file, w)
 
     # write to binary file
@@ -181,9 +181,9 @@ def version1_export(model, filepath):
 
 def version2_export(model, filepath, group_size=64):
     """
-    Export the model weights in Q8_0 into .bin file to be read from C.
+    Export the model d_weights in Q8_0 into .bin file to be read from C.
     That is:
-    - quantize all weights to symmetric int8, in range [-127, 127]
+    - quantize all d_weights to symmetric int8, in range [-127, 127]
     - all other tensors (the rmsnorm params) are kept and exported in fp32
     - quantization is done in groups of group_size to reduce the effects of any outliers
     """
@@ -193,7 +193,7 @@ def version2_export(model, filepath, group_size=64):
     while model.params.dim % group_size != 0:
         group_size //= 2
         print(f"BACKOFF: reducing group size to {group_size} to fit hidden_dim")
-    weights = [
+    d_weights = [
         model.tok_embeddings.weight,
         *[layer.attention.wq.weight for layer in model.layers],
         *[layer.attention.wk.weight for layer in model.layers],
@@ -205,8 +205,8 @@ def version2_export(model, filepath, group_size=64):
     ]
     shared_classifier = torch.equal(model.tok_embeddings.weight, model.output.weight)
     if not shared_classifier:
-        weights.append(model.output.weight)
-    for w in weights:
+        d_weights.append(model.output.weight)
+    for w in d_weights:
         assert w.numel() % group_size == 0, f"weight {i} has numel {w.numel()}, not a multiple of group_size {group_size}"
 
     # write
@@ -241,7 +241,7 @@ def version2_export(model, filepath, group_size=64):
     # now let's write out all the params that we are quantizing to Q8_0
     # note we skip classifier weights, which are shared with the embedding
     ew = []
-    for i, w in enumerate(weights):
+    for i, w in enumerate(d_weights):
         # quantize this weight
         q, s, err = quantize_q80(w, group_size)
         # save the int8 weights to file
@@ -249,11 +249,11 @@ def version2_export(model, filepath, group_size=64):
         serialize_fp32(out_file, s) # save scale factors
         # logging
         ew.append((err, w.shape))
-        print(f"{i+1}/{len(weights)} quantized {tuple(w.shape)} to Q8_0 with max error {err}")
+        print(f"{i+1}/{len(d_weights)} quantized {tuple(w.shape)} to Q8_0 with max error {err}")
 
     # print the highest error across all weights, should be very small, e.g. O(~0.001)
     ew.sort(reverse=True)
-    print(f"max quantization group error across all weights: {ew[0][0]}")
+    print(f"max quantization group error across all d_weights: {ew[0][0]}")
 
     # write to binary file
     out_file.close()

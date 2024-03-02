@@ -3,9 +3,10 @@
 #include <cstdio>
 #include <vector>
 
-static std::vector<float *> pinnedHostMemory;
-static float *weights {nullptr};
+static std::vector<float *> h_pinnedHostMemory;
+static float *d_weights {nullptr};
 static size_t weights_size {0};
+static float *h_temporaryDeviceDataPtr {nullptr};
 
 #define HANDLE_CUDA_RESULT(FUNC) \
     do { \
@@ -18,12 +19,12 @@ static size_t weights_size {0};
 
 static bool isInDeviceMemory(void *ptr, size_t size)
 {
-    if ((char*)weights <= ptr && ptr < (char*)weights + weights_size)
+    if ((char*)d_weights <= ptr && ptr < (char*)d_weights + weights_size)
     {
-        if ((char*)weights + weights_size < (char*)ptr + size)
+        if ((char*)d_weights + weights_size < (char*)ptr + size)
         {
             fprintf(stderr, "Questioned memory is too big for allocated weights: %p/%zd - %p/%zd\n",
-                weights, weights_size, ptr, size);
+                    d_weights, weights_size, ptr, size);
                exit(EXIT_FAILURE);
         }
         return true;
@@ -34,11 +35,11 @@ static bool isInDeviceMemory(void *ptr, size_t size)
 
 float *allocateDeviceWeights(float *source, size_t size)
 {
-    HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
-    HANDLE_CUDA_RESULT(cudaMemcpy(weights, source, size, cudaMemcpyHostToDevice));
+    HANDLE_CUDA_RESULT(cudaMalloc((void**)&d_weights, size));
+    HANDLE_CUDA_RESULT(cudaMemcpy(d_weights, source, size, cudaMemcpyHostToDevice));
     weights_size = size;
-    DBG_PRINTF("Allocated weights: %p / %zd", weights, size);
-    return weights;
+    DBG_PRINTF("Allocated weights: %p / %zd", d_weights, size);
+    return d_weights;
 }
 
 float *allocatePinnedHostMemory(size_t size)
@@ -46,29 +47,51 @@ float *allocatePinnedHostMemory(size_t size)
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
     HANDLE_CUDA_RESULT(cudaMemset(ptr, 0, size));
-    pinnedHostMemory.push_back(ptr);
+    h_pinnedHostMemory.push_back(ptr);
 
     DBG_PRINTF("Allocated pinned memory: %p / %zd", ptr, size);
     return ptr;
 }
 
-void freeDeviceMemoryAndWeights()
-{
-    for (auto ptr : pinnedHostMemory)
-    {
-        HANDLE_CUDA_RESULT(cudaFreeHost(ptr));
-    }
-
-    HANDLE_CUDA_RESULT(cudaFree(weights));
-    weights = nullptr;
-    weights_size = 0;
-}
-
-void copyDeviceWeightsToHost(float *destination, float *source, size_t size)
+void copyDeviceWeightsToHost(void *destination, float *source, size_t size)
 {
     HANDLE_CUDA_RESULT(cudaMemcpy(destination, source, size, cudaMemcpyDeviceToHost));
     HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 }
+
+float* getTemporaryDeviceValues(float *d_src, size_t dim)
+{
+
+    if (h_temporaryDeviceDataPtr != nullptr)
+    {
+        free(h_temporaryDeviceDataPtr);
+    }
+
+    h_temporaryDeviceDataPtr = (float*)calloc(dim, sizeof *d_src);
+    HANDLE_CUDA_RESULT(cudaMemcpy(h_temporaryDeviceDataPtr, d_src, dim * sizeof *d_src, cudaMemcpyDeviceToHost));
+    HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
+
+    return h_temporaryDeviceDataPtr;
+}
+
+void freeDeviceMemoryAndWeights()
+{
+    for (auto d_ptr : h_pinnedHostMemory)
+    {
+        HANDLE_CUDA_RESULT(cudaFreeHost(d_ptr));
+    }
+
+    if (h_temporaryDeviceDataPtr != nullptr)
+    {
+        free(h_temporaryDeviceDataPtr);
+        h_temporaryDeviceDataPtr = nullptr;
+    }
+
+    HANDLE_CUDA_RESULT(cudaFree(d_weights));
+    d_weights = nullptr;
+    weights_size = 0;
+}
+
 
 __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n, int d) {
     int col = blockIdx.x * blockDim.x + threadIdx.x;
