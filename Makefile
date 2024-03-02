@@ -35,7 +35,7 @@ runfast: run.c
 # Same as run, but with CUDA support
 .PHONY: runcuda
 runcuda: run.c matmul.o
-	$(CC) $(DEBUG) -D ENABLE_CUDA=1 -c -O3 -o run.o run.c
+	$(CC) $(DEBUG) -D ENABLE_CUDA=1 -g -c -O3 -o run.o run.c
 	$(NVCC) -o run run.o matmul.o
 matmul.o: matmul.cu matmul.h
 	$(NVCC) -c -O3 -o matmul.o matmul.cu
@@ -72,7 +72,7 @@ test:
 
 # build a test to check if cuda is calculating correctly.
 testcuda: testcuda.c matmul.o
-	$(CC) -c -O3 -o testcuda.o testcuda.c
+	$(CC) -g -c -O3 -o testcuda.o testcuda.c
 	$(NVCC) -o testcuda testcuda.o matmul.o
 
 # run only tests for run.c C implementation (is a bit faster if only C code changed)

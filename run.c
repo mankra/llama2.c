@@ -285,6 +285,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 
     // copy the token embedding into x
     float* content_row = w->token_embedding_table + token * dim;
+
 #if ! defined (ENABLE_CUDA)
     memcpy(x, content_row, dim*sizeof(*x));
 #else
@@ -454,6 +455,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         // final matmul to get the output of the ffn
         DBG_PRINTF("7");
         matmul(s->xb, s->hb, w->w2 + l*dim*hidden_dim, hidden_dim, dim);
+        printVector("xb", x, 0);
 
         // residual connection
         for (int i = 0; i < dim; i++) {
@@ -465,16 +467,32 @@ float* forward(Transformer* transformer, int token, int pos) {
 #if defined (ENABLE_CUDA)
     float *rms_final_weight = (float*)calloc(dim, sizeof(float));
     copyDeviceWeightsToHost(rms_final_weight, w->rms_final_weight, dim * sizeof(float));
-    rmsnorm(s->xb, x, rms_final_weight, dim);
+
+/*
+    float *h_x = (float*)calloc(dim, sizeof(float));
+    copyDeviceWeightsToHost(h_x, x, dim * sizeof(float));
+    */
+
+    rmsnorm(x, x, rms_final_weight, dim);
+
     free(rms_final_weight);
     rms_final_weight = NULL;
+    /*
+    free(h_x);
+    h_x = NULL;
+     */
 #else
     rmsnorm(x, x, w->rms_final_weight, dim);
 #endif
 
     // classifier into logits
     DBG_PRINTF("8");
+    printVector("xb", x, 0);
+    //printVector("cls", w->wcls, 0);
     matmul(s->logits, x, w->wcls, p->dim, p->vocab_size);
+
+    printVector("logits", s->logits, 0);
+
     return s->logits;
 }
 
@@ -862,7 +880,7 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
     int token = prompt_tokens[0]; // kick off with the first token in the prompt
     int pos = 0;     // position in the sequence
     while (pos < steps) {
-        DBG_PRINTF("pos: %d", pos);
+        DBG_PRINTF("pos: %d token: %d", pos, token);
         // forward the transformer to get logits for the next token
         float* logits = forward(transformer, token, pos);
 
@@ -870,11 +888,14 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
         if (pos < num_prompt_tokens - 1) {
             // if we are still processing the input prompt, force the next prompt token
             next = prompt_tokens[pos + 1];
+            DBG_PRINTF("<1 next: %d", next);
         } else {
             // otherwise sample the next token from the logits
             next = sample(sampler, logits);
+            DBG_PRINTF("else next: %d", next);
         }
         pos++;
+
 
         // data-dependent terminating condition: the BOS (=1) token delimits sequences
         if (next == 1) { break; }
