@@ -96,9 +96,9 @@ void malloc_run_state(RunState* s, Config* p) {
 	s->xb = calloc(p->dim, sizeof(float));
     s->hb = calloc(p->hidden_dim, sizeof(float));
 #else
-    s->x = allocatePinnedHostMemory(p->dim * sizeof(float));
-    s->xb = allocatePinnedHostMemory(p->dim * sizeof(float));
-    s->hb = allocatePinnedHostMemory(p->hidden_dim * sizeof(float));
+    s->x = cuda_allocate_pinned_memory(p->dim * sizeof(float));
+    s->xb = cuda_allocate_pinned_memory(p->dim * sizeof(float));
+    s->hb = cuda_allocate_pinned_memory(p->hidden_dim * sizeof(float));
 #endif
     s->xb2 = calloc(p->dim, sizeof(float));
     s->hb2 = calloc(p->hidden_dim, sizeof(float));
@@ -181,7 +181,7 @@ void read_checkpoint(char* checkpoint, Config* config, TransformerWeights* weigh
     if (*data == MAP_FAILED) { fprintf(stderr, "mmap failed!\n"); exit(EXIT_FAILURE); }
     float* weights_ptr = *data + sizeof(Config)/sizeof(float);
 #if defined (ENABLE_CUDA)
-    weights_ptr = allocateDeviceWeights(weights_ptr, *file_size - sizeof(Config));
+    weights_ptr = cuda_allocate_device_weights(weights_ptr, *file_size - sizeof(Config));
 #endif
     memory_map_weights(weights, config, weights_ptr, shared_weights);
 }
@@ -274,7 +274,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 #if ! defined (ENABLE_CUDA)
     memcpy(x, content_row, dim*sizeof(*x));
 #else
-    copyDeviceWeightsToHost(x, content_row, dim * sizeof(*x));
+    cuda_copy_device_weights_to_host(x, content_row, dim * sizeof(*x));
 #endif
 
     // forward all the layers
@@ -283,7 +283,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 
         // attention rmsnorm
 #if defined (ENABLE_CUDA)
-        rmsnorm(s->xb, x, getTemporaryDeviceValues(w->rms_att_weight + l*dim, dim), dim);
+        rmsnorm(s->xb, x, cuda_get_temporary_device_weights(w->rms_att_weight + l * dim, dim), dim);
 #else
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
 #endif
@@ -365,7 +365,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 
         // ffn rmsnorm
 #if defined (ENABLE_CUDA)
-        rmsnorm(s->xb, x, getTemporaryDeviceValues(w->rms_ffn_weight + l*dim, dim), dim);
+        rmsnorm(s->xb, x, cuda_get_temporary_device_weights(w->rms_ffn_weight + l * dim, dim), dim);
 #else
         rmsnorm(s->xb, x, w->rms_ffn_weight + l*dim, dim);
 #endif
@@ -397,7 +397,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 
     // final rmsnorm
 #if defined (ENABLE_CUDA)
-    rmsnorm(x, x, getTemporaryDeviceValues(w->rms_final_weight, dim), dim);
+    rmsnorm(x, x, cuda_get_temporary_device_weights(w->rms_final_weight, dim), dim);
 #else
     rmsnorm(x, x, w->rms_final_weight, dim);
 #endif
@@ -1018,7 +1018,7 @@ int main(int argc, char *argv[]) {
     free_tokenizer(&tokenizer);
     free_transformer(&transformer);
 #if defined ENABLE_CUDA
-    freeDeviceMemoryAndWeights();
+    cuda_free_all_memory();
 #endif
 
     return 0;

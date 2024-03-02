@@ -33,16 +33,16 @@ static bool isInDeviceMemory(void *ptr, size_t size)
     return false;
 }
 
-float *allocateDeviceWeights(float *h_source, size_t size)
+float *cuda_allocate_device_weights(float *source, size_t size)
 {
     HANDLE_CUDA_RESULT(cudaMalloc((void**)&d_weights, size));
-    HANDLE_CUDA_RESULT(cudaMemcpy(d_weights, h_source, size, cudaMemcpyHostToDevice));
+    HANDLE_CUDA_RESULT(cudaMemcpy(d_weights, source, size, cudaMemcpyHostToDevice));
     weights_size = size;
     DBG_PRINTF("Allocated weights: %p / %zd", d_weights, size);
     return d_weights;
 }
 
-float *allocatePinnedHostMemory(size_t size)
+float *cuda_allocate_pinned_memory(size_t size)
 {
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
@@ -59,7 +59,7 @@ void copyDeviceWeightsToHost(void *h_destination, float *d_source, size_t size)
     HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 }
 
-float* getTemporaryDeviceValues(float *d_src, size_t dim)
+float* cuda_get_temporary_device_weights(float *d_src, size_t dim)
 {
 
     if (h_temporaryDeviceDataPtr != nullptr)
@@ -74,7 +74,7 @@ float* getTemporaryDeviceValues(float *d_src, size_t dim)
     return h_temporaryDeviceDataPtr;
 }
 
-void freeDeviceMemoryAndWeights()
+void cuda_free_all_memory()
 {
     for (auto d_ptr : h_pinnedHostMemory)
     {
