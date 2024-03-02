@@ -44,7 +44,6 @@ float *cuda_allocate_device_weights(float *source, size_t size)
     HANDLE_CUDA_RESULT(cudaMalloc((void**)&d_weights, size));
     HANDLE_CUDA_RESULT(cudaMemcpy(d_weights, source, size, cudaMemcpyHostToDevice));
     weights_size = size;
-    DBG_PRINTF("Allocated weights: %p / %zd", d_weights, size);
     return d_weights;
 }
 
@@ -54,8 +53,6 @@ float *cuda_allocate_pinned_memory(size_t size)
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
     HANDLE_CUDA_RESULT(cudaMemset(ptr, 0, size));
     h_pinnedHostMemory.push_back(ptr);
-
-    DBG_PRINTF("Allocated pinned memory: %p / %zd", ptr, size);
     return ptr;
 }
 
@@ -104,9 +101,6 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
 
     float sum {0.0f};
 
-    if (col == 0) {
-        DBG_PRINTF("dev_w[0] %f dev_w[n*d] %f dev_x[0]: %f dev_x[n-1] %f", w[0], w[n*d], x[0], x[n - 1]);
-    }
     if (col < d)
     {
         for (int i = 0; i < n; i++) {

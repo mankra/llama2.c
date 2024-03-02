@@ -16,13 +16,6 @@
 
 #if defined ENABLE_CUDA
     #include "matmul.h"
-#else
-    #if defined DEBUG
-    #define DBG_PRINTF(fmt, ...) \
-        printf("Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
-    #else
-    #define DBG_PRINTF(fmt, ...) do {} while (0)
-    #endif
 #endif
 
 
@@ -287,8 +280,6 @@ float* forward(Transformer* transformer, int token, int pos) {
 
     // forward all the layers
     for(unsigned long long l = 0; l < p->n_layers; l++) {
-        DBG_PRINTF("l: %llu", l);
-
         // attention rmsnorm
 #if ! defined ENABLE_CUDA
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
@@ -394,7 +385,6 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // final matmul to get the output of the ffn
-        DBG_PRINTF("7");
         matmul(s->xb, s->hb, w->w2 + l*dim*hidden_dim, hidden_dim, dim);
 
         // residual connection
@@ -800,7 +790,6 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
     int token = prompt_tokens[0]; // kick off with the first token in the prompt
     int pos = 0;     // position in the sequence
     while (pos < steps) {
-        DBG_PRINTF("pos: %d token: %d", pos, token);
         // forward the transformer to get logits for the next token
         float* logits = forward(transformer, token, pos);
 
@@ -808,11 +797,9 @@ void generate(Transformer *transformer, Tokenizer *tokenizer, Sampler *sampler, 
         if (pos < num_prompt_tokens - 1) {
             // if we are still processing the input prompt, force the next prompt token
             next = prompt_tokens[pos + 1];
-            DBG_PRINTF("<1 next: %d", next);
         } else {
             // otherwise sample the next token from the logits
             next = sample(sampler, logits);
-            DBG_PRINTF("else next: %d", next);
         }
         pos++;
 
