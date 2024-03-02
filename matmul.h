@@ -18,7 +18,7 @@ extern "C" {
 
 float *allocateDeviceWeights(float *source, size_t size);
 float *allocatePinnedHostMemory(size_t size);
-void copyDeviceWeightsToHost(float *destination, float *source, size_t size);
+void copyDeviceWeightsToHost(float *h_destination, float *d_source, size_t size);
 float* getTemporaryDeviceValues(float *d_src, size_t dim);
 void freeDeviceMemoryAndWeights();
 
