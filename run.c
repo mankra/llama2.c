@@ -468,19 +468,10 @@ float* forward(Transformer* transformer, int token, int pos) {
     float *rms_final_weight = (float*)calloc(dim, sizeof(float));
     copyDeviceWeightsToHost(rms_final_weight, w->rms_final_weight, dim * sizeof(float));
 
-/*
-    float *h_x = (float*)calloc(dim, sizeof(float));
-    copyDeviceWeightsToHost(h_x, x, dim * sizeof(float));
-    */
-
     rmsnorm(x, x, rms_final_weight, dim);
 
     free(rms_final_weight);
     rms_final_weight = NULL;
-    /*
-    free(h_x);
-    h_x = NULL;
-     */
 #else
     rmsnorm(x, x, w->rms_final_weight, dim);
 #endif
@@ -488,7 +479,6 @@ float* forward(Transformer* transformer, int token, int pos) {
     // classifier into logits
     DBG_PRINTF("8");
     printVector("xb", x, 0);
-    //printVector("cls", w->wcls, 0);
     matmul(s->logits, x, w->wcls, p->dim, p->vocab_size);
 
     printVector("logits", s->logits, 0);

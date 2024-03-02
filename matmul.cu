@@ -18,7 +18,6 @@ static size_t weights_size {0};
 
 static bool isInDeviceMemory(void *ptr, size_t size)
 {
-    //DBG_PRINTF("weights: %p, weights_end: %p, ptr: %p, ptr_end: %p", weights, (char*)weights+weights_size, ptr, (char*)ptr+size);
     if ((char*)weights <= ptr && ptr < (char*)weights + weights_size)
     {
         if ((char*)weights + weights_size < (char*)ptr + size)
@@ -37,7 +36,6 @@ float *allocateDeviceWeights(float *source, size_t size)
 {
     HANDLE_CUDA_RESULT(cudaMalloc((void**)&weights, size));
     HANDLE_CUDA_RESULT(cudaMemcpy(weights, source, size, cudaMemcpyHostToDevice));
-    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
     weights_size = size;
     DBG_PRINTF("Allocated weights: %p / %zd", weights, size);
     return weights;
@@ -48,7 +46,6 @@ float *allocatePinnedHostMemory(size_t size)
     float *ptr{nullptr};
     HANDLE_CUDA_RESULT(cudaMallocHost((void**)&ptr, size));
     HANDLE_CUDA_RESULT(cudaMemset(ptr, 0, size));
-    //HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
     pinnedHostMemory.push_back(ptr);
 
     DBG_PRINTF("Allocated pinned memory: %p / %zd", ptr, size);
@@ -84,12 +81,10 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
     if (col < d)
     {
         for (int i = 0; i < n; i++) {
-            // DBG_PRINTF("COL: %d i: %d w: %f x: %f", col, i, w[col * n + i], x[i]);
             sum += w[col * n + i] * x[i];
         }
     }
 
-    // DBG_PRINTF("COL: %d n: %d d: %d sum: %f", col, n, d, sum);
     out[col] = sum;
 }
 
