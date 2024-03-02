@@ -8,11 +8,17 @@ static float *d_weights {nullptr};
 static size_t weights_size {0};
 static float *h_temporaryDeviceDataPtr {nullptr};
 
+// Macro for easier CUDA error checking and logging.
 #define HANDLE_CUDA_RESULT(FUNC) \
     do { \
         if (cudaError_t result = FUNC; result != cudaSuccess) \
         { \
-            fprintf(stderr, "Encountered cuda error with function '%s' at line %d: %s(%d)\n", #FUNC, __LINE__, cudaGetErrorName(result), result); \
+            fprintf(stderr, "CUDA error with function '%s' at line %d: %s(%d)\n", \
+                #FUNC,           \
+                __LINE__,        \
+                cudaGetErrorName(result), \
+                result           \
+            ); \
             exit(EXIT_FAILURE); \
         } \
     } while(0)
@@ -53,7 +59,7 @@ float *cuda_allocate_pinned_memory(size_t size)
     return ptr;
 }
 
-void copyDeviceWeightsToHost(void *h_destination, float *d_source, size_t size)
+void cuda_copy_device_weights_to_host(float *h_destination, float *d_source, size_t size)
 {
     HANDLE_CUDA_RESULT(cudaMemcpy(h_destination, d_source, size, cudaMemcpyDeviceToHost));
     HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
@@ -115,33 +121,33 @@ __global__ void matrixMultiplicationKernel(float* w, float* x, float* out, int n
 void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     float *d_w {};
     const size_t size_w {sizeof(float) * (n * d)};
+
+    // If the given Memory is already in the device, we do not need to copy it.
     if (!isInDeviceMemory(h_w, size_w))
     {
-        DBG_PRINTF("copy w: %p / %zd h_w[0] %f", h_w, size_w, h_w[0]);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_w, size_w));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_w, h_w, size_w, cudaMemcpyHostToDevice));
     }
     else
     {
-        DBG_PRINTF("use w: %p / %zd", h_w, size_w);
         d_w = h_w;
     }
 
     float *d_x {};
     const size_t size_x {sizeof(float) * (n)};
+
+    // If the given Memory is already in the device, we do not need to copy it.
     if (!isInDeviceMemory(h_x, size_x))
     {
-        DBG_PRINTF("copy x: %p / %zd h_x[0] %f", h_x, size_x, h_x[0]);
         HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_x, size_x));
         HANDLE_CUDA_RESULT(cudaMemcpy(d_x, h_x, size_x, cudaMemcpyHostToDevice));
     }
     else
     {
-        DBG_PRINTF("use x: %p / %zd", h_x, size_x);
         d_x = h_x;
     }
 
-
+    // Calculate the threads and block size.
     dim3 threadsPerBlock{static_cast<unsigned>(d)};
     dim3 blocksPerGrid{1};
     if (d > 512) {
@@ -149,20 +155,20 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
         blocksPerGrid.x = ceil(double(d) / double(threadsPerBlock.x));
     }
 
-    // Allocate device memory
+    // Allocate device memory for the result.
     float *d_out{};
     const size_t size_out = sizeof(float) * (d);
     HANDLE_CUDA_RESULT(cudaMalloc((void **) &d_out, size_out));
     HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
+    // Do the actual calculation.
     matrixMultiplicationKernel<<<blocksPerGrid, threadsPerBlock>>>(d_w, d_x, d_out, n, d);
     HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
-
+    // Get the result to host Memory and free only the here allocated memory.
     HANDLE_CUDA_RESULT(cudaMemcpy(h_out, d_out, size_out, cudaMemcpyDeviceToHost));
     HANDLE_CUDA_RESULT(cudaDeviceSynchronize());
 
-    // Deallocate device memory
     if (d_x != h_x)
     {
         HANDLE_CUDA_RESULT(cudaFree(d_x));
@@ -171,5 +177,6 @@ void matmul(float *h_out, float *h_x, float *h_w, int n, int d) {
     {
         HANDLE_CUDA_RESULT(cudaFree(d_w));
     }
+
     HANDLE_CUDA_RESULT(cudaFree(d_out));
 }

@@ -17,7 +17,7 @@
 #if defined ENABLE_CUDA
     #include "matmul.h"
 #else
-    #if defined (DEBUG)
+    #if defined DEBUG
     #define DBG_PRINTF(fmt, ...) \
         printf("Debug: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
     #else
@@ -91,6 +91,8 @@ typedef struct {
 void malloc_run_state(RunState* s, Config* p) {
     // we calloc instead of malloc to keep valgrind happy
     int kv_dim = (p->dim * p->n_kv_heads) / p->n_heads;
+
+    // Here we use pinned host memory to get a better memcopy to device performance.
 #if ! defined ENABLE_CUDA
     s->x = calloc(p->dim, sizeof(float));
 	s->xb = calloc(p->dim, sizeof(float));
@@ -116,6 +118,7 @@ void malloc_run_state(RunState* s, Config* p) {
 }
 
 void free_run_state(RunState* s) {
+    // Because we used pinned memory in cuda, this is freed in cuda module.
 #if ! defined ENABLE_CUDA
     free(s->x);
     free(s->xb);
@@ -180,9 +183,14 @@ void read_checkpoint(char* checkpoint, Config* config, TransformerWeights* weigh
     *data = mmap(NULL, *file_size, PROT_READ, MAP_PRIVATE, *fd, 0);
     if (*data == MAP_FAILED) { fprintf(stderr, "mmap failed!\n"); exit(EXIT_FAILURE); }
     float* weights_ptr = *data + sizeof(Config)/sizeof(float);
-#if defined (ENABLE_CUDA)
+
+    // Here we allocate the weights in device memmory, to avoid the memcopy to devie everytime.
+    // The disadvantage is, that we always have to copy the weights to the host, if we want to use
+    // it for calculation!
+#if defined ENABLE_CUDA
     weights_ptr = cuda_allocate_device_weights(weights_ptr, *file_size - sizeof(Config));
 #endif
+
     memory_map_weights(weights, config, weights_ptr, shared_weights);
 }
 
@@ -271,7 +279,7 @@ float* forward(Transformer* transformer, int token, int pos) {
     // copy the token embedding into x
     float* content_row = w->token_embedding_table + token * dim;
 
-#if ! defined (ENABLE_CUDA)
+#if ! defined ENABLE_CUDA
     memcpy(x, content_row, dim*sizeof(*x));
 #else
     cuda_copy_device_weights_to_host(x, content_row, dim * sizeof(*x));
@@ -282,10 +290,10 @@ float* forward(Transformer* transformer, int token, int pos) {
         DBG_PRINTF("l: %llu", l);
 
         // attention rmsnorm
-#if defined (ENABLE_CUDA)
-        rmsnorm(s->xb, x, cuda_get_temporary_device_weights(w->rms_att_weight + l * dim, dim), dim);
-#else
+#if ! defined ENABLE_CUDA
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
+#else
+        rmsnorm(s->xb, x, cuda_get_temporary_device_weights(w->rms_att_weight + l * dim, dim), dim);
 #endif
 
         // key and value point to the kv cache
@@ -364,10 +372,10 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // ffn rmsnorm
-#if defined (ENABLE_CUDA)
-        rmsnorm(s->xb, x, cuda_get_temporary_device_weights(w->rms_ffn_weight + l * dim, dim), dim);
-#else
+#if ! defined ENABLE_CUDA
         rmsnorm(s->xb, x, w->rms_ffn_weight + l*dim, dim);
+#else
+        rmsnorm(s->xb, x, cuda_get_temporary_device_weights(w->rms_ffn_weight + l * dim, dim), dim);
 #endif
 
         // Now for FFN in PyTorch we have: self.w2(F.silu(self.w1(x)) * self.w3(x))
@@ -396,10 +404,10 @@ float* forward(Transformer* transformer, int token, int pos) {
     }
 
     // final rmsnorm
-#if defined (ENABLE_CUDA)
-    rmsnorm(x, x, cuda_get_temporary_device_weights(w->rms_final_weight, dim), dim);
-#else
+#if ! defined ENABLE_CUDA
     rmsnorm(x, x, w->rms_final_weight, dim);
+#else
+    rmsnorm(x, x, cuda_get_temporary_device_weights(w->rms_final_weight, dim), dim);
 #endif
 
     // classifier into logits
@@ -1017,6 +1025,7 @@ int main(int argc, char *argv[]) {
     free_sampler(&sampler);
     free_tokenizer(&tokenizer);
     free_transformer(&transformer);
+
 #if defined ENABLE_CUDA
     cuda_free_all_memory();
 #endif
