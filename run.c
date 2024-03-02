@@ -88,21 +88,6 @@ typedef struct {
 } Transformer;
 
 
-static void printVector(const char *prefix, float* vector, size_t size)
-{
-#if defined (DEBUG_VECTOR)
-    printf("Vector %s size: %zd First floats: %f %f %f %f %f %f\n",
-           prefix,
-           size,
-           vector[0],
-           vector[1],
-           vector[2],
-           vector[3],
-           vector[4],
-           vector[5]
-    );
-#endif
-}
 void malloc_run_state(RunState* s, Config* p) {
     // we calloc instead of malloc to keep valgrind happy
     int kv_dim = (p->dim * p->n_kv_heads) / p->n_heads;
@@ -302,16 +287,11 @@ float* forward(Transformer* transformer, int token, int pos) {
         copyDeviceWeightsToHost(rms_attn_weight, w->rms_att_weight + l*dim, dim * sizeof(float));
         rmsnorm(s->xb, x, rms_attn_weight, dim);
 
-        printVector("rms_attn_weight", rms_attn_weight, dim);
-
         free(rms_attn_weight);
         rms_attn_weight = NULL;
 #else
         rmsnorm(s->xb, x, w->rms_att_weight + l*dim, dim);
-        printVector("rms_attn_weight", w->rms_att_weight + l*dim, dim);
 #endif
-        printVector("x", x, dim);
-        printVector("s->xb", s->xb, dim);
 
         // key and value point to the kv cache
         int loff = l * p->seq_len * kv_dim; // kv cache layer offset for convenience
@@ -321,32 +301,14 @@ float* forward(Transformer* transformer, int token, int pos) {
 #if defined (ENABLE_CUDA)
         float *wq = (float*)calloc(dim, sizeof(float));
         copyDeviceWeightsToHost(wq, w->wq + l*dim*dim, dim * sizeof(float));
-        printVector("wq", wq, 0);
         free(wq);
         wq = NULL;
-#else
-        printVector("wq", w->wq + l*dim*dim, 0);
 #endif
 
         // qkv matmuls for this position
-        DBG_PRINTF("***************");
-#if defined (ENABLE_CUDA)
-        DBG_PRINTF("w->wq X s->xb -> s->q xb[0] %f", s->xb[0]);
-#else
-        //DBG_PRINTF("w->wq X s->xb -> s->q wq[0] %f w[n*d] %f xb[0] %f xb[dim-1] %f", w->wq[0], w->wq[dim * dim], s->xb[0], s->xb[dim - 1]);
-        DBG_PRINTF("w->wq X s->xb -> s->q xb[0] %f", s->xb[0]);
-#endif
         matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
-        printVector("q", s->q, 0);
-        DBG_PRINTF("***************");
-
-        DBG_PRINTF("w->wk X s->xb -> s->k");
         matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
-        DBG_PRINTF("w->wv X s->xb -> s->v");
         matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
-
-        printVector("k", s->k, 0);
-        printVector("v", s->v, 0);
 
         // RoPE relative positional encoding: complex-valued rotate q and k in each head
         for (int i = 0; i < dim; i+=2) {
@@ -406,9 +368,7 @@ float* forward(Transformer* transformer, int token, int pos) {
         }
 
         // final matmul to get the output of the attention
-        DBG_PRINTF("4");
         matmul(s->xb2, s->xb, w->wo + l*dim*dim, dim, dim);
-        printVector("xb2", s->xb2, 0);
 
         // residual connection back into x
         for (int i = 0; i < dim; i++) {
@@ -421,25 +381,15 @@ float* forward(Transformer* transformer, int token, int pos) {
         copyDeviceWeightsToHost(rms_ffn_weight, w->rms_ffn_weight + l*dim, dim * sizeof(float));
         rmsnorm(s->xb, x, rms_ffn_weight, dim);
 
-        printVector("rms_ffn_weight", rms_ffn_weight, dim);
-        printVector("x", x, dim);
-        printVector("s->xb", s->xb, dim);
-
         free(rms_ffn_weight);
         rms_ffn_weight = NULL;
 #else
         rmsnorm(s->xb, x, w->rms_ffn_weight + l*dim, dim);
-        printVector("rms_ffn_weight", w->rms_ffn_weight + l*dim, dim);
-        printVector("x", x, dim);
-        printVector("s->xb", s->xb, dim);
-
 #endif
 
         // Now for FFN in PyTorch we have: self.w2(F.silu(self.w1(x)) * self.w3(x))
         // first calculate self.w1(x) and self.w3(x)
-        DBG_PRINTF("5");
         matmul(s->hb, s->xb, w->w1 + l*dim*hidden_dim, dim, hidden_dim);
-        DBG_PRINTF("6");
         matmul(s->hb2, s->xb, w->w3 + l*dim*hidden_dim, dim, hidden_dim);
 
         // SwiGLU non-linearity
@@ -455,7 +405,6 @@ float* forward(Transformer* transformer, int token, int pos) {
         // final matmul to get the output of the ffn
         DBG_PRINTF("7");
         matmul(s->xb, s->hb, w->w2 + l*dim*hidden_dim, hidden_dim, dim);
-        printVector("xb", x, 0);
 
         // residual connection
         for (int i = 0; i < dim; i++) {
@@ -477,11 +426,7 @@ float* forward(Transformer* transformer, int token, int pos) {
 #endif
 
     // classifier into logits
-    DBG_PRINTF("8");
-    printVector("xb", x, 0);
     matmul(s->logits, x, w->wcls, p->dim, p->vocab_size);
-
-    printVector("logits", s->logits, 0);
 
     return s->logits;
 }
